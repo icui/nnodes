@@ -175,3 +175,32 @@ class Summit(LSF):
 
     # number of GPUs per node
     gpus_per_node = 6
+
+
+class Slurm(Job):
+    """Slurm-based cluster."""
+    def write(self, cmd, dst):
+        pass
+
+    def requeue(self):
+        pass
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+        """Get the command to call MPI."""
+        return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
+
+
+class Tiger(Slurm):
+    # number of CPUs per node
+    cpus_per_node = 20
+
+    # number of GPUs per node
+    gpus_per_node = 4
+
+
+class Traverse(Slurm):
+    # number of CPUs per node
+    cpus_per_node = 32
+
+    # number of GPUs per node
+    gpus_per_node = 4
