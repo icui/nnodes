@@ -81,7 +81,7 @@ class Root(Node):
             self._mpi = MPI(mpidir, {}, self)
 
         # create Job object
-        self._job = parse_import(self.system)(self._init['_job'], self._init['_jobstat'])
+        self._job = parse_import(self._init['_job']['system'])(self._init['_job'], self._init['_jobstat'])
 
     async def execute(self):
         """Execute main task."""
