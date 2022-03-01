@@ -192,7 +192,7 @@ class Slurm(Job):
 
 class Tiger(Slurm):
     # number of CPUs per node
-    cpus_per_node = 20
+    cpus_per_node = 28
 
     # number of GPUs per node
     gpus_per_node = 4
