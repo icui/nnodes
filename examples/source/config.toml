@@ -1,0 +1,12 @@
+[job]
+name = "source"
+nnodes = 7
+account = "GEO111"
+walltime = 120.0
+gap = 2.0
+debug = true
+
+[root]
+system = ["nnodes.job", "Tiger"]
+task = ["source", "main"]
+task_nnodes = 1

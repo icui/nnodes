@@ -1,0 +1,2 @@
+alias clearsim='rm -rf /scratch/gpfs/lsawade/testdatabase/*/simu/*'
+alias rmp='rm -f root.pickle'
