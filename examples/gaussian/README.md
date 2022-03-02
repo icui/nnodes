@@ -51,6 +51,11 @@ Make sure you have python install with `numpy` and `matplotlib`.
     # Run nnodes 
     python nnrun
     ```
+3. Once run, the workflow saves `root.pickle` into the run dir to see 
+   progress. Make sure that you delete it before repeating step 2.
+   ```bash
+   rm -f root.pickle 
+   ```
 
 This will output many things to your terminal, wait until done.
 
