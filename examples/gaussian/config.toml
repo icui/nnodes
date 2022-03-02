@@ -1,5 +1,5 @@
 [job]
-system = ["nnodes.job", "MacBookPro15_1_2018"]
+system = ["nnodes.job", "HexaCore"]
 name = "gaussian"
 nnodes = 1
 account = "GEO111"
