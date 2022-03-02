@@ -204,3 +204,30 @@ class Traverse(Slurm):
 
     # number of GPUs per node
     gpus_per_node = 4
+
+
+class Local(Job):
+    """Slurm-based cluster."""
+    def write(self, cmd, dst):
+        pass
+
+    def requeue(self):
+        pass
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+        """Get the command to call MPI."""
+        return f'$(which mpiexec) -n {nprocs} {cmd}'
+
+class HexaCore(Local):
+    # number of CPUs per node
+    cpus_per_node = 6
+
+    # number of GPUs per node
+    gpus_per_node = 0
+
+class SingleCore(Local):
+    # number of CPUs per node
+    cpus_per_node = 1
+
+    # number of GPUs per node
+    gpus_per_node = 0

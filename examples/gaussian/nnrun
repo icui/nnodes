@@ -1,0 +1,4 @@
+
+from nnodes import root
+
+root.run()
