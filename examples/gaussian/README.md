@@ -177,8 +177,8 @@ Main
 ```
 
 As you can see from the above structure we can run `inversionXX`s concurrently
-and some tasks sequentially. Of course, each of the sub functions are more involved than what is show here, but you get the gist.
-
+and some tasks sequentially. Of course, each of the sub functions are more 
+involved than what is show here, but you get the gist.
 
 
 ## Special Functions
