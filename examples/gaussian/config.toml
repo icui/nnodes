@@ -1,0 +1,12 @@
+[job]
+system = ["nnodes.job", "MacBookPro15_1_2018"]
+name = "gaussian"
+nnodes = 1
+account = "GEO111"
+walltime = 10.0
+gap = 2.0
+debug = true
+
+[root]
+task = ["workflow", "main"]
+task_nnodes = 1
