@@ -25,10 +25,10 @@ class Job(ABC):
     gap: float = 0.0
 
     # number of CPUs per node (if is None, the value must exist in config.toml)
-    cpus_per_node: int
+    cpus_per_node: int = 1
 
     # number of GPUs per node (if is None, the value must exist in config.toml)
-    gpus_per_node: int
+    gpus_per_node: int = 0
 
     @property
     def paused(self):
