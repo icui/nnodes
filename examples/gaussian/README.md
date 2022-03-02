@@ -74,16 +74,15 @@ Gauss-Newton Hessians for `inversion00`.
 
 
 1. _**Evolution of the cost function for the five inversions**_
-    <img src="figures/costs.png" alt="costs" width="75%"/>
+    <img src="figures/costs.png" alt="costs" width="60%"/>
 
 
 2. _**Evolution of the model parameters for the five inversions**_
-    <img src="figures/models.png" alt="models" width="75%"/>
+    <img src="figures/models.png" alt="models" width="60%"/>
 
 
 3. _**Evolution of the Gauss Newton Hessian for `inversions00`**_
-   <img src="figures/hessians.png" alt="hessians" width="75%"/>
-
+   <img src="figures/hessians.png" alt="hessians" width="60%"/>
 
 
 ## Setup
