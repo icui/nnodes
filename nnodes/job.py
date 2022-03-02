@@ -218,7 +218,7 @@ class Local(Job):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'
 
-class MacBookPro15_1_2018(Local):
+class HexaCore(Local):
     # number of CPUs per node
     cpus_per_node = 6
 
