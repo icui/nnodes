@@ -205,6 +205,13 @@ class Traverse(Slurm):
     # number of GPUs per node
     gpus_per_node = 4
 
+class DTN(Slurm):
+    # number of CPUs per node
+    cpus_per_node = 16
+
+    # number of GPUs per node
+    gpus_per_node = 0
+
 
 class Local(Job):
     """Slurm-based cluster."""
