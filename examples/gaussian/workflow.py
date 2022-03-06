@@ -139,13 +139,13 @@ def _getname(node: Node):
 # Run forward synthetics
 def compute_forward(node: Node):
     forward(node.outdir, node.iter, node.step)
-    # node.add(partial(forward, node.outdir, node.iter, node.step), args=(), name='fwd_' + _getname(node))
+    # node.add_mpi(partial(forward, node.outdir, node.iter, node.step), cwd=node.outdir, name='fwd' + _getname(node))
 
 
 # Run frechet derivative computation
 def compute_frechet(node: Node):
     frechet(node.param, node.outdir, node.iter, node.step)
-    # node.add(partial(frechet, node.param, node.outdir, node.iter, node.step), args=(), name='fch_' + _getname(node))
+    # node.add_mpi(partial(frechet, node.param, node.outdir, node.iter, node.step), cwd=node.outdir, name=f'fch{node.param:05d}' + _getname(node))
 
 
 # ----------------------------------
