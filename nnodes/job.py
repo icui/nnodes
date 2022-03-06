@@ -33,6 +33,9 @@ class Job(ABC):
     # whether a node can run multiple MPI tasks
     node_splittable = False
 
+    # use multiprocessing instread of MPI
+    use_multiprocessing = False
+
     @property
     def paused(self):
         """Job paused due to insuffcient time."""
@@ -229,7 +232,9 @@ class DTN(Slurm):
 
 
 class Local(Job):
-    """Local submission of Jobs."""
+    """Local computer using multiprocessing instead of MPI."""
+    use_multiprocessing = True
+
     def write(self, cmd, dst):
         pass
 
@@ -237,23 +242,15 @@ class Local(Job):
         pass
 
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+        """Get the command to call multiprocessing."""
+
+        return f'{cmd} -mp {nprocs * max(cpus_per_proc, gpus_per_proc)}'
+
+
+class LocalMPI(Local):
+    """Local computer with MPI installed."""
+    use_multiprocessing = False
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'
-
-
-class HexaCore(Local):
-    """Local 6 core machine."""
-    # number of CPUs per node
-    cpus_per_node = 6
-
-    # number of GPUs per node
-    gpus_per_node = 0
-
-
-class SingleCore(Local):
-    """Local single core machine."""
-    # number of CPUs per node
-    cpus_per_node = 1
-
-    # number of GPUs per node
-    gpus_per_node = 0
