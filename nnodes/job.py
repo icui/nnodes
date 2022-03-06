@@ -30,6 +30,9 @@ class Job(ABC):
     # number of GPUs per node (if is None, the value must exist in config.toml)
     gpus_per_node: int = 0
 
+    # whether a node can run multiple MPI tasks
+    node_splittable = False
+
     @property
     def paused(self):
         """Job paused due to insuffcient time."""
