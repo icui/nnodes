@@ -48,7 +48,8 @@ def test_mpi(node):
     node.add_mpi('echo "test mpi 1"', 4)
 
     # approach 2: function (only config.toml is loaded in MPI processes, not root.pickle)
-    node.add_mpi(test_mpi_print, 4, arg='test mpi 2')
+    node.add_mpi(test_mpi_print, 4, arg='test mpi 2', name='test_mpi_print1')
+    node.add_mpi(test_mpi_print, arg='test mpi 3', name='test_mpi_print2')
 
     # approach 3: function process-dependent arguments and default number of MPI processes
     node.add_mpi(test_mpi_write, arg_mpi=list(range(100)))
