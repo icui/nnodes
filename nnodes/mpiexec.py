@@ -5,19 +5,20 @@ from functools import partial
 from math import ceil
 from time import time
 from datetime import timedelta
+from fractions import Fraction
 
 from .root import root
 from .directory import Directory
 
 
 # pending tasks
-_pending: tp.Dict[asyncio.Lock, int] = {}
+_pending: tp.Dict[asyncio.Lock, Fraction] = {}
 
 # running tasks
-_running: tp.Dict[asyncio.Lock, int] = {}
+_running: tp.Dict[asyncio.Lock, Fraction] = {}
 
 
-def _dispatch(lock: asyncio.Lock, nnodes: int) -> bool:
+def _dispatch(lock: asyncio.Lock, nnodes: Fraction) -> bool:
     """Execute a task if resource is available."""
     ntotal = root.job.nnodes
 
@@ -68,10 +69,13 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nprocs = min(len(arg_mpi), nprocs)
 
         # calculate node number
-        nnodes = int(ceil(nprocs * cpus_per_proc  / root.job.cpus_per_node))
+        nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
 
         if gpus_per_proc > 0:
-            nnodes = max(nnodes, int(ceil(nprocs * gpus_per_proc  / root.job.gpus_per_node)))
+            nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc / root.job.gpus_per_node))
+        
+        if not root.job.node_splittable:
+            nnodes = Fraction(int(ceil(nnodes)))
 
         # wait for node resources
         await lock.acquire()
