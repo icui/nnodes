@@ -3,6 +3,8 @@ from nnodes import root
 from os import curdir
 from os.path import abspath
 from sys import path
+from time import time
+from datetime import timedelta
 
 
 def bin():
@@ -18,4 +20,6 @@ def bin():
         path.append(cwd)
 
     # Run the workflow.
+    time_start = time()
     root.run()
+    print(f'elapsed: {timedelta(seconds=int(time()-time_start))}')
