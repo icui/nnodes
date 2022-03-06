@@ -67,7 +67,7 @@ class Job(ABC):
 
     # run a MPI task
     @abstractmethod
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0) -> str: ...
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str: ...
 
     def __init__(self, job: dict, state: dict):
         # job state (paused, failed, aborted)
@@ -158,15 +158,23 @@ class LSF(Job):
         else:
             root.job.paused = False
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0):
         """Get the command to call MPI."""
         jsrun = 'jsrun'
 
         if nprocs == 1:
             # avoid MPI warning in Summit
             jsrun += ' --smpiargs="off"'
+        
+        a = 1
 
-        return f'{jsrun} -n {nprocs} -a 1 -c {cpus_per_proc} -g {gpus_per_proc} {cmd}'
+        if isinstance(gpus_per_proc, float):
+            a = round(1 / gpus_per_proc)
+            cpus_per_proc *= a
+            gpus_per_proc = 1
+            nprocs //= a
+
+        return f'{jsrun} -n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc} {cmd}'
 
 
 class Summit(LSF):

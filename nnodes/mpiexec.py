@@ -48,7 +48,7 @@ def getname(cmd: tp.Union[str, tp.Callable]) -> str:
 
 
 async def mpiexec(cmd: tp.Union[str, tp.Callable],
-    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: int,
+    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: tp.Union[int, float],
     name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
     check_output: tp.Optional[tp.Callable[[str], None]], d: Directory) -> str:
     """Schedule the execution of MPI task"""
@@ -71,7 +71,7 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         nnodes = int(ceil(nprocs * cpus_per_proc  / root.job.cpus_per_node))
 
         if gpus_per_proc > 0:
-            nnodes = max(nnodes, int(ceil(nprocs * gpus_per_proc  / root.job.gpus_per_node)))
+            nnodes = max(nnodes, int(ceil(nprocs * max(1, gpus_per_proc)  / root.job.gpus_per_node)))
 
         # wait for node resources
         await lock.acquire()
