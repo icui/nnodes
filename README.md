@@ -5,7 +5,7 @@ A simple workflow manager.
 **What nnodes does**
 
 - Provide a tree structure to manage ```tasks``` and properties.
-- Save and restore "```task```" progress.
+- Save and restore ```task``` progress.
 - Manage the parallel execution of multiple MPI calls.
 - Offer vairous file system and MPI utilities.
 

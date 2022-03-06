@@ -370,7 +370,7 @@ class Node(Directory, tp.Generic[N]):
     
     def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
         nprocs: tp.Optional[tp.Union[int, tp.Callable[[Directory], int]]] = None,
-        per_proc: tp.Union[int, tp.Tuple[int, int]] = (1, 0), *,
+        per_proc: tp.Union[int, tp.Tuple[int, tp.Union[int, float]]] = (1, 0), *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
         check_output: tp.Optional[tp.Callable[[str], None]] = None,
         cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None):
@@ -383,6 +383,13 @@ class Node(Directory, tp.Generic[N]):
 
         if isinstance(per_proc, int):
             per_proc = (per_proc, per_proc)
+        
+        if isinstance(per_proc[1], float):
+            if not 0 < per_proc[1] < 1:
+                raise ValueError('per_proc[1] of type float must be a value between 0 and 1')
+
+            if isinstance(nprocs, int) and nprocs % round(1 / per_proc[1]) != 0:
+                raise ValueError('nprocs * per_proc[1] must be an integer')
         
         func = partial(mpiexec, cmd, nprocs, per_proc[0], per_proc[1], name, arg, arg_mpi, check_output)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
