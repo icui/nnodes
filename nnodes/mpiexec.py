@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 from functools import partial
-from math import ceil
+from math import ceil, inf
 from time import time
 from datetime import timedelta
 from fractions import Fraction
@@ -21,6 +21,9 @@ _running: tp.Dict[asyncio.Lock, Fraction] = {}
 def _dispatch(lock: asyncio.Lock, nnodes: Fraction) -> bool:
     """Execute a task if resource is available."""
     ntotal = root.job.nnodes
+
+    if root.job.use_multiprocessing:
+        ntotal = inf
 
     if nnodes > ntotal:
         raise RuntimeError(f'Insufficient nodes ({nnodes} / {ntotal})')
@@ -91,8 +94,11 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         # save function as pickle to run in parallel
         if name is None:
             name = getname(cmd)
+        
+        if not callable(cmd) and (arg is not None or arg_mpi is not None):
+            raise NotImplementedError('cannot add arguments to shell command')
 
-        if callable(cmd):
+        if callable(cmd) or root.job.use_multiprocessing:
             if arg_mpi:
                 # assign a chunk of arg_mpi to each processor
                 arg_mpi = sorted(arg_mpi)
@@ -117,9 +123,6 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             cmd = f'python -m "nnodes.mpi" {d.path(name)}'
         
         else:
-            if arg is not None or arg_mpi is not None:
-                raise TypeError('cannot add arguments to shell command')
-
             cwd = d.path()
         
         # wrap with parallel execution command

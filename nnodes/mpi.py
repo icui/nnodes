@@ -1,23 +1,27 @@
+from __future__ import annotations
 import typing as tp
 import asyncio
 from os import path
 from sys import argv, stderr
 from traceback import format_exc
-from mpi4py.MPI import COMM_WORLD as comm
+from functools import partial
 
 from .root import root, Node
+
+if tp.TYPE_CHECKING:
+    from mpi4py.MPI import Intracomm
 
 
 class MPI(Node):
     """Node for current MPI workspace."""
     # Index of current MPI process
-    rank: int = comm.Get_rank()
+    rank: int
 
     # Total number of MPI processes
-    size: int = comm.Get_size()
+    size: int
 
     # MPI Comm World
-    comm = comm
+    comm: Intracomm
 
     # Default file name of current process
     @property
@@ -39,23 +43,63 @@ class MPI(Node):
         self.dump(obj, path.join(dst, self.pid + ext), mkdir=False)
 
 
-if __name__ == '__main__':
-    try:
-        # saved function and arguments from main process
-        (func, arg, arg_mpi) = root.load(f'{argv[1]}.pickle')
-        root.init(mpidir=path.dirname(argv[1]) or '.')
+def _call(size: int, idx: int):
+    mpidir = path.dirname(argv[1]) or '.'
+    root.init(mpidir=mpidir)
 
-        # determine arguments
-        args = []
+    if size == 0:
+        # use mpi
+        from mpi4py.MPI import COMM_WORLD as comm
 
-        if arg is not None:
-            args.append(arg)
+        root.mpi.comm = comm
+        root.mpi.rank = comm.Get_rank()
+        root.mpi.size = comm.Get_size()
 
-        if arg_mpi is not None:
-            args.append(arg_mpi[tp.cast(MPI, root.mpi).rank])
+    else:
+        # use multiprocessing
+        root.mpi.rank = idx
+        root.mpi.size = size
+    
+    # saved function and arguments from main process
+    (func, arg, arg_mpi) = root.load(f'{argv[1]}.pickle')
 
+    # determine function arguments
+    args = []
+
+    if arg is not None:
+        args.append(arg)
+
+    if arg_mpi is not None:
+        args.append(arg_mpi[idx])
+
+    # call target function
+    if callable(func):
         if asyncio.iscoroutine(result := func(*args)):
             asyncio.run(result)
+    
+    else:
+        from subprocess import check_call
+        check_call(func, shell=True, cwd=mpidir)
+
+
+if __name__ == '__main__':
+    try:
+        if len(argv) > 3 and argv[2] == '-mp':
+            # use multiprocessing
+            np = int(argv[3])
+
+            if np == 1:
+                _call(np, 0)
+            
+            else:
+                from multiprocessing import Pool
+
+                with Pool(processes=np) as pool:
+                    pool.map(partial(_call, np), range(np))
+        
+        else:
+            # use mpi
+            _call(0, 0)
     
     except Exception:
         err = format_exc()
