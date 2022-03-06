@@ -70,7 +70,7 @@ def _call(size: int, idx: int):
         args.append(arg)
 
     if arg_mpi is not None:
-        args.append(arg_mpi[idx])
+        args.append(arg_mpi[root.mpi.rank])
 
     # call target function
     if callable(func):
