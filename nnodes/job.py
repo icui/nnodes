@@ -202,6 +202,7 @@ class Slurm(Job):
 
 
 class Tiger(Slurm):
+    """Princeton TigerGPU"""
     # number of CPUs per node
     cpus_per_node = 28
 
@@ -210,13 +211,16 @@ class Tiger(Slurm):
 
 
 class Traverse(Slurm):
+    """Princeton Traverse"""
     # number of CPUs per node
     cpus_per_node = 32
 
     # number of GPUs per node
     gpus_per_node = 4
 
+
 class DTN(Slurm):
+    """Oak Ridge National Lab Data Transfer Node."""
     # number of CPUs per node
     cpus_per_node = 16
 
@@ -225,7 +229,7 @@ class DTN(Slurm):
 
 
 class Local(Job):
-    """Slurm-based cluster."""
+    """Local submission of Jobs."""
     def write(self, cmd, dst):
         pass
 
@@ -236,14 +240,18 @@ class Local(Job):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'
 
+
 class HexaCore(Local):
+    """Local 6 core machine."""
     # number of CPUs per node
     cpus_per_node = 6
 
     # number of GPUs per node
     gpus_per_node = 0
 
+
 class SingleCore(Local):
+    """Local single core machine."""
     # number of CPUs per node
     cpus_per_node = 1
 
