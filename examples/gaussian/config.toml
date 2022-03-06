@@ -1,5 +1,5 @@
 [job]
-system = ["nnodes.job", "HexaCore"]
+system = ["nnodes.job", "Local"]
 name = "gaussian"
 nnodes = 1
 account = "GEO111"
