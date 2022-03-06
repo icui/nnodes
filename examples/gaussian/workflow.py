@@ -1,4 +1,5 @@
 import os, sys
+from functools import partial
 from nnodes import Node
 from functions.utils import optimdir, removedir
 from functions.make_data import make_data, get_NM
@@ -127,14 +128,24 @@ def all_forward(node: Node):
         node.add(compute_frechet, param=_i)
 
 
+def _getname(node: Node):
+    """Get mpiexec name for forward and frechet."""
+    if node.step is not None:
+        return f"_it{node.iter:05d}_ls{node.step:05d}"
+    else:
+        return f"_it{node.iter:05d}"
+
+
 # Run forward synthetics
 def compute_forward(node: Node):
     forward(node.outdir, node.iter, node.step)
+    # node.add_mpi(partial(forward, node.outdir, node.iter, node.step), cwd=node.outdir, name='fwd' + _getname(node))
 
 
 # Run frechet derivative computation
 def compute_frechet(node: Node):
     frechet(node.param, node.outdir, node.iter, node.step)
+    # node.add_mpi(partial(frechet, node.param, node.outdir, node.iter, node.step), cwd=node.outdir, name=f'fch{node.param:05d}' + _getname(node))
 
 
 # ----------------------------------
