@@ -48,8 +48,8 @@ Make sure you have python install with `numpy` and `matplotlib`.
     # Change dir to the examples Gaussian directory
     cd examples/gaussian
 
-    # Run nnodes 
-    python nnrun
+    # Run nnodes
+    nnrun
     ```
 3. Once run, the workflow saves `root.pickle` into the run dir to see 
    progress. Make sure that you delete it before repeating step 2.

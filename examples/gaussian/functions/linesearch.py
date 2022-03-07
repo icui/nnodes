@@ -150,16 +150,19 @@ def linesearch(outdir, it, ls):
 
     # If linesearch is in progress
     else:
+        # Read iteration's q
+        q_old, _, _, _, _, _, _ = read_optvals(
+            outdir, it, 0)
 
         # Read previous set of optimization values
-        q_old, alpha_l, alpha_r, alpha, _, _, _ = read_optvals(
+        _, alpha_l, alpha_r, alpha, _, _, _ = read_optvals(
             outdir, it, ls-1)
 
         # Read current q and new queue
         cost = read_cost(outdir, it, ls)
 
         # Read current q and new queue
-        cost_old = read_cost(outdir, it, ls-1)
+        cost_old = read_cost(outdir, it, 0)
 
         # Safeguard check for inf and nans...
         if np.isnan(cost) or np.isinf(cost):
