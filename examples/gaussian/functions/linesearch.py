@@ -156,7 +156,7 @@ def linesearch(outdir, it, ls):
             outdir, it, ls-1)
 
         # Read current q and new queue
-        cost = read_cost(outdir, it, ls)
+        cost = read_cost(outdir, it, 0)
 
         # Read current q and new queue
         cost_old = read_cost(outdir, it, ls-1)
