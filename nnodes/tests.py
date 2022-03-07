@@ -28,12 +28,13 @@ def test_serial_print(node):
 
 def test_concurrent(node):
     """Run two tasks concurrently."""
+    node.add('sleep 3 && echo "    > test 7"', name='test_concurrent3')
     node.add(test_concurrent1, delay=2)
     node.add(test_concurrent2, delay=1)
 
 
 async def test_concurrent1(node):
-    await asyncio.sleep(node.delay)
+    await node.call_async(f'sleep {node.delay}')
     print('    > test 6')
 
 
