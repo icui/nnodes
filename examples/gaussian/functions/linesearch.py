@@ -150,9 +150,12 @@ def linesearch(outdir, it, ls):
 
     # If linesearch is in progress
     else:
+        # Read iteration's q
+        q_old, _, _, _, _, _, _ = read_optvals(
+            outdir, it, 0)
 
         # Read previous set of optimization values
-        q_old, alpha_l, alpha_r, alpha, _, _, _ = read_optvals(
+        _, alpha_l, alpha_r, alpha, _, _, _ = read_optvals(
             outdir, it, ls-1)
 
         # Read current q and new queue
