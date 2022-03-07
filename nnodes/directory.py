@@ -262,6 +262,16 @@ class Directory:
         """
         check_call(cmd, cwd=self.cwd, shell=True)
     
+    async def call_async(self, cmd: str):
+        """Call a shell command asynchronously.
+
+        Args:
+            cmd (str): Shell command.
+        """
+        from asyncio import create_subprocess_shell
+        process = await create_subprocess_shell(cmd, cwd=self.cwd)
+        await process.communicate()
+    
     def load(self, src: str, ext: DumpType = None) -> tp.Any:
         """Load a pickle / toml / json / npy file.
 
