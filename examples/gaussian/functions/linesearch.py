@@ -159,10 +159,10 @@ def linesearch(outdir, it, ls):
             outdir, it, ls-1)
 
         # Read current q and new queue
-        cost = read_cost(outdir, it, 0)
+        cost = read_cost(outdir, it, ls)
 
         # Read current q and new queue
-        cost_old = read_cost(outdir, it, ls-1)
+        cost_old = read_cost(outdir, it, 0)
 
         # Safeguard check for inf and nans...
         if np.isnan(cost) or np.isinf(cost):
