@@ -72,7 +72,7 @@ def write_scaling(s, outdir):
     np.save(file, s)
 
 
-def read_scaling(outdir):
+def sread_scaling(outdir):
 
     # Write scaling to metadir
     metadir = os.path.join(outdir, 'meta')

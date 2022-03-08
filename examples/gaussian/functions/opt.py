@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from .model import read_model, write_model
+from .model import read_model, write_model, read_scaling
 from .cost import read_cost, write_cost
 from .descent import read_descent
 from .gradient import read_gradient, write_gradient
@@ -72,9 +72,10 @@ def check_done(outdir, it, ls):
     stopping_criterion_cost_change = optparams["stopping_criterion_cost_change"]
 
     # Read necessary vals
+    s = read_scaling(outdir)
     _, _, _, alpha, _, _, _ = read_optvals(outdir, it, ls)
-    model = read_model(outdir, it+1, 0)
-    model_prev = read_model(outdir, it, 0)
+    model = read_model(outdir, it+1, 0)/s
+    model_prev = read_model(outdir, it, 0)/s
 
     # Init Status flag
     STATUS = False
