@@ -67,14 +67,14 @@ def check_done(outdir, it, ls):
     optparams = read_optparams(outdir)
 
     # Get parameters
-    stopping_criterion=optparams["stopping_criterion"]
-    stopping_criterion_model=optparams["stopping_criterion_model"]
-    stopping_criterion_cost_change=optparams["stopping_criterion_cost_change"]
+    stopping_criterion = optparams["stopping_criterion"]
+    stopping_criterion_model = optparams["stopping_criterion_model"]
+    stopping_criterion_cost_change = optparams["stopping_criterion_cost_change"]
 
     # Read necessary vals
     _, _, _, alpha, _, _, _ = read_optvals(outdir, it, ls)
-    model = read_model(outdir, it, ls)
-    model_prev = read_model(outdir, it, ls-1)
+    model = read_model(outdir, it+1, 0)
+    model_prev = read_model(outdir, it, 0)
 
     # Init Status flag
     STATUS = False
