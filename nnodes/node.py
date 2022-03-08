@@ -212,7 +212,12 @@ class Node(Directory, tp.Generic[N]):
                             pass
                     
                     if name == self.name:
-                        name += ' (running)'
+                        # Get current elapsed time
+                        celapsed = time() - (self._dispatchtime or self._starttime)
+                        dt = str(timedelta(seconds=int(round(celapsed))))
+
+                        # Get attribute string
+                        name += f' (running - {dt})'
         
         return name
 
