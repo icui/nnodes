@@ -40,11 +40,11 @@ def make_data(outdir, idx=0):
 
     # List of Initial guesses m0: amplitude, x0, yo, sigma_x, sigma_y, theta, offset
     m_init_list = [
-        dict(a=3,   x0=90,  y0=95, sigma_x=20, sigma_y=40, theta=0.1, c=1.0),
+        dict(a=3,   x0=100,  y0=95, sigma_x=25, sigma_y=40, theta=0.1, c=1.0),
         dict(a=4,   x0=120, y0=85, sigma_x=30, sigma_y=30, theta=0.1, c=1.5),
         dict(a=5,   x0=105, y0=95, sigma_x=20, sigma_y=40, theta=0.1, c=2.5),
         dict(a=4.5, x0=100, y0=100, sigma_x=30, sigma_y=30, theta=0.1, c=1.75),
-        dict(a=2.5, x0=100, y0=100, sigma_x=20, sigma_y=40, theta=0.1, c=1.0)
+        dict(a=2.75, x0=100, y0=100, sigma_x=30, sigma_y=40, theta=0.1, c=1.0)
     ]
 
     # Grab one guess depening on the idx parameter
@@ -54,12 +54,12 @@ def make_data(outdir, idx=0):
 
     # Optimization dictionary
     optdict = dict(
-        damping = 0.01,
+        damping = 0.001,
         stopping_criterion = 1e-5,
         stopping_criterion_model = 1e-5,
         stopping_criterion_cost_change = 1e-7,
         niter_max = 10,
-        nls_max = 10,
+        nls_max = 5,
         alpha = 1.0,
         perc = 0.1
     )

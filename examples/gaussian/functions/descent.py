@@ -70,7 +70,10 @@ def descent(outdir, it, ls=None):
 
     # Damp the gradient and the Hessian
     if damping > 0.0:
-        m0 = read_model(outdir, 0, 0)
+        if it == 0:
+            m0 = read_model(outdir, it, 0)
+        else:
+            m0 = read_model(outdir, it-1, 0)
         g, H = damp_gH(m, m0, g, H, damping)
 
     # Get direction
