@@ -36,6 +36,12 @@ class Job(ABC):
     # use multiprocessing instread of MPI
     use_multiprocessing = False
 
+    # job is being requeued
+    _signaled = False
+
+    # job state
+    _state: tp.List[bool]
+
     @property
     def paused(self):
         """Job paused due to insuffcient time."""
@@ -75,7 +81,7 @@ class Job(ABC):
     @abstractmethod
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str: ...
 
-    def __init__(self, job: dict, state: dict):
+    def __init__(self, job: dict, state: list):
         # job state (paused, failed, aborted)
         self._state = state
 

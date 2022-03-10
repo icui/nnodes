@@ -101,12 +101,12 @@ class Root(Node):
 
         # requeue job if task failed
         if self.job.failed and not self.job.aborted and not self.job.debug and not self.job.paused:
-            self.job.paused = True
+            self.job._signaled = True
             self.job.requeue()
     
     def save(self):
         """Save state from event loop."""
-        if self.job.paused:
+        if self.job._signaled:
             # job is being requeued
             return
 
@@ -120,8 +120,9 @@ class Root(Node):
     def _signal(self, *_):
         """Requeue due to insufficient time."""
         if not self.job.aborted:
-            self.save()
             self.job.paused = True
+            self.save()
+            self.job._signaled = True
             self.job.requeue()
 
 
