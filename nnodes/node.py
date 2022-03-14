@@ -263,12 +263,7 @@ class Node(Directory, tp.Generic[N]):
                 task = parse_import(task)
             
             elif isinstance(task, str):
-                if self.parent and self.parent.concurrent:
-                    task = partial(self.call_async, task)
-
-                else:
-                    task = partial(self.call, task)
-
+                task = partial(self.call_async, task)
                 self.args = ()
 
             # print to stdout
