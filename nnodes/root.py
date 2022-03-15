@@ -124,8 +124,10 @@ class Root(Node):
     async def _ping(self):
         """Periodically save to root.pickle."""
         await asyncio.sleep(60)
-        self.save()
-        asyncio.create_task(self._ping())
+
+        if not self.done:
+            self.save()
+            asyncio.create_task(self._ping())
 
     def _signal(self, *_):
         """Requeue due to insufficient time."""
