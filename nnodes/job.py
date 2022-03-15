@@ -36,6 +36,12 @@ class Job(ABC):
     # use multiprocessing instread of MPI
     use_multiprocessing = False
 
+    # job is being requeued
+    _signaled = False
+
+    # job state
+    _state: tp.List[bool]
+
     @property
     def paused(self):
         """Job paused due to insuffcient time."""
@@ -63,19 +69,22 @@ class Job(ABC):
     def aborted(self, key: bool):
         self._state[2] = key
 
-    # write job submission script to target directory
-    @abstractmethod
-    def write(self, cmd: str, dst: str): ...
+    def write(self, cmd: str, dst: str):
+        """Write job submission script to target directory (do nothing by default)."""
+        pass
 
-    # resubmit current job
-    @abstractmethod
-    def requeue(self): ...
+    def requeue(self):
+        """Resubmit current job (do nothing by default)."""
+        from .root import root
+        
+        root.job.paused = False
+        root.job._signaled = False
 
     # run a MPI task
     @abstractmethod
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str: ...
 
-    def __init__(self, job: dict, state: dict):
+    def __init__(self, job: dict, state: list):
         # job state (paused, failed, aborted)
         self._state = state
 
@@ -140,6 +149,7 @@ class LSF(Job):
             f'#BSUB -nnodes {self.nnodes}',
             f'#BSUB -o lsf.%J.o',
             f'#BSUB -e lsf.%J.e'
+            f'#BSUB -alloc_flags "gpumps"'
         ]
 
         if self.account:
@@ -156,13 +166,11 @@ class LSF(Job):
 
     def requeue(self):
         """Run current job again."""
-        from .root import root
-
         if environ.get('LSB_INTERACTIVE') != 'Y':
             check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
         else:
-            root.job.paused = False
+            super().requeue()
 
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0):
         """Get the command to call MPI."""
@@ -193,12 +201,6 @@ class Summit(LSF):
 
 class Slurm(Job):
     """Slurm-based cluster."""
-    def write(self, cmd, dst):
-        pass
-
-    def requeue(self):
-        pass
-
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
         """Get the command to call MPI."""
         return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
@@ -234,12 +236,6 @@ class DTN(Slurm):
 class Local(Job):
     """Local computer using multiprocessing instead of MPI."""
     use_multiprocessing = True
-
-    def write(self, cmd, dst):
-        pass
-
-    def requeue(self):
-        pass
 
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
         """Get the command to call multiprocessing."""

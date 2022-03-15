@@ -11,13 +11,17 @@ import typing as tp
 from .directory import Directory
 
 
-def parse_import(path: tp.Union[tp.List[str], tp.Tuple[str, str]]) -> tp.Any:
+def parse_import(path: tp.Iterable[str]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
-        return getattr(import_module(path[0]), path[1])
+        target = import_module(path[0])
+
+        for key in path[1:]:
+            target = getattr(target, key)
+        
+        return target
     
     return path
-
 
 # generic Node type for parent and children
 N = tp.TypeVar('N', bound='Node')
@@ -264,12 +268,7 @@ class Node(Directory, tp.Generic[N]):
                 task = parse_import(task)
             
             elif isinstance(task, str):
-                if self.parent and self.parent.concurrent:
-                    task = partial(self.call_async, task)
-
-                else:
-                    task = partial(self.call, task)
-
+                task = partial(self.call_async, task)
                 self.args = ()
 
             # print to stdout
