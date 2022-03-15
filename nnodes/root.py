@@ -1,6 +1,8 @@
 from __future__ import annotations
 import typing as tp
 import signal
+import asyncio
+from time import time
 
 from .node import Node, parse_import
 
@@ -97,6 +99,7 @@ class Root(Node):
             signal.signal(signal.SIGALRM, self._signal)
             signal.alarm(int((self.job.walltime - self.job.gap) * 60))
 
+        asyncio.create_task(self._ping())
         await super().execute()
 
         # requeue job if task failed
@@ -114,8 +117,15 @@ class Root(Node):
             # root can only be saved from main process
             raise RuntimeError('cannot save root from MPI process')
         
+        self._init['_ping'] = time()
         self.dump(self.__getstate__(), '_root.pickle')
         self.mv('_root.pickle', 'root.pickle')
+    
+    async def _ping(self):
+        """Periodically save to root.pickle."""
+        await asyncio.sleep(60)
+        self.save()
+        asyncio.create_task(self._ping())
 
     def _signal(self, *_):
         """Requeue due to insufficient time."""

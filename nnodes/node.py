@@ -216,12 +216,17 @@ class Node(Directory, tp.Generic[N]):
                             pass
                     
                     if name == self.name:
-                        # Get current elapsed time
-                        celapsed = time() - (self._dispatchtime or self._starttime)
-                        dt = str(timedelta(seconds=int(round(celapsed))))
+                        # job exited unexpectedly
+                        if time() - (root._init.get('_ping') or 0) > 70:
+                            name += ' (not running)'
+                        
+                        else:
+                            # Get current elapsed time
+                            celapsed = time() - (self._dispatchtime or self._starttime)
+                            dt = str(timedelta(seconds=int(round(celapsed))))
 
-                        # Get attribute string
-                        name += f' (running - {dt})'
+                            # Get attribute string
+                            name += f' (running - {dt})'
         
         return name
 
