@@ -54,7 +54,9 @@ def getname(cmd: tp.Union[str, tp.Callable]) -> str:
 async def mpiexec(cmd: tp.Union[str, tp.Callable],
     nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: tp.Union[int, float],
     name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
-    check_output: tp.Optional[tp.Callable[[str], None]], d: Directory) -> str:
+    check_output: tp.Optional[tp.Callable[[str], None]],
+    timeout: tp.Optional[int], ontimeout: tp.Optional[tp.Callable[[], None]],
+    d: Directory) -> str:
     """Schedule the execution of MPI task"""
     # task queue controller
     lock = asyncio.Lock()
@@ -136,7 +138,20 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
 
             # execute in subprocess
             process = await asyncio.create_subprocess_shell(cmd, cwd=cwd, stdout=f, stderr=f)
-            await process.communicate()
+
+            if timeout:
+                try:
+                    await asyncio.wait_for(process.communicate(), timeout)
+                
+                except asyncio.TimeoutError as e:
+                    if ontimeout:
+                        ontimeout()
+                    
+                    else:
+                        raise e
+            
+            else:
+                await process.communicate()
 
             # write elapsed time
             f.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n')

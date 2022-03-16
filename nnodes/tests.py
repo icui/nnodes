@@ -55,6 +55,17 @@ def test_mpi(node):
     # approach 3: function process-dependent arguments and default number of MPI processes
     node.add_mpi(test_mpi_write, arg_mpi=list(range(100)))
 
+    # test MPI timeout
+    node.add_mpi(test_mpi_timeout, timeout=3, ontimeout=test_mpi_ontimeout)
+
+
+async def test_mpi_timeout():
+    await asyncio.sleep(60)
+
+
+def test_mpi_ontimeout():
+    print('    > test 7')
+
 
 def test_mpi_print(arg):
     print(arg)
