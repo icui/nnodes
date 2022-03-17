@@ -9,4 +9,3 @@ system = ["nnodes.job", "Local"]
 
 [root]
 task = ["workflow", "test"]
-task_nnodes = 1

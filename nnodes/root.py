@@ -16,9 +16,6 @@ class Root(Node):
     # import path for job scheduler
     system: tp.List[str]
 
-    # default number of nodes to run MPI tasks (if task_nnodes is None, task_nprocs must be set)
-    task_nnodes: tp.Optional[int]
-
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: tp.Optional[MPI] = None
 
@@ -45,20 +42,6 @@ class Root(Node):
     @property
     def mpi(self) -> MPI:
         return tp.cast('MPI', self._mpi)
-
-    @property
-    def task_nprocs(self) -> int:
-        """Default number of processors to run MPI tasks."""
-        if 'task_nprocs' in self._data:
-            return self._data['task_nprocs']
-
-        if 'task_nprocs' in self._init:
-            return self._init['task_nprocs']
-
-        if self.task_nnodes is None:
-            raise KeyError('default number of MPI processes (task_nprocs or task_nnodes) is not set')
-
-        return self.task_nnodes * self.job.cpus_per_node
     
     def init(self, /, mpidir: tp.Optional[str] = None):
         """Restore state."""

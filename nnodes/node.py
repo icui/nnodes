@@ -383,7 +383,7 @@ class Node(Directory, tp.Generic[N]):
         return tp.cast(N, node)
     
     def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
-        nprocs: tp.Optional[tp.Union[int, tp.Callable[[Directory], int]]] = None,
+        nprocs: tp.Union[int, tp.Callable[[Directory], int]] = 1,
         cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0, *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
         check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
@@ -394,9 +394,6 @@ class Node(Directory, tp.Generic[N]):
         from .root import root
         from .mpiexec import mpiexec, getname
 
-        if nprocs is None:
-            nprocs = root.task_nprocs
-        
         if use_multiprocessing is None:
             use_multiprocessing = root.job.use_multiprocessing
         

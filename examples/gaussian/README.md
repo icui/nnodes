@@ -107,7 +107,6 @@ debug = true
 
 [root]
 task = ["workflow", "main"]
-task_nnodes = 1
 ```
 
 Important parameters are 
