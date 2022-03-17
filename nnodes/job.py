@@ -1,11 +1,10 @@
 import typing as tp
 from time import time
-from abc import ABC, abstractmethod
 from os import path, environ
 from subprocess import check_call
 
 
-class Job(ABC):
+class Job:
     """Base class for clusters."""
     # job name
     name: tp.Optional[str] = None
@@ -85,13 +84,16 @@ class Job(ABC):
 
     def write(self, cmd: str, dst: str):
         """Write job submission script to target directory."""
+        from  .root import root
+
+        root.write(cmd, path.join(dst, 'job.sh'))
 
     def requeue(self):
         """Resubmit current job."""
 
-    # run a MPI task
-    @abstractmethod
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str: ...
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str:
+        """Run a MPI task."""
+        raise NotImplementedError(f'mpiexec is not implemented ({cmd}, {nprocs}, {cpus_per_proc}, {gpus_per_proc})')
 
     def __init__(self, job: dict, state: list):
         # job state (paused, failed, aborted)
@@ -249,11 +251,6 @@ class DTN(Slurm):
 class Local(Job):
     """Local computer using multiprocessing instead of MPI."""
     use_multiprocessing = True
-
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
-        """Get the command to call multiprocessing."""
-
-        return f'{cmd} -mp {nprocs * max(cpus_per_proc, gpus_per_proc)}'
 
 
 class LocalMPI(Local):

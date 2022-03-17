@@ -127,7 +127,11 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             cwd = d.path()
         
         # wrap with parallel execution command
-        cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, gpus_per_proc)
+        if use_multiprocessing:
+            cmd = f'{cmd} -mp {nprocs * max(cpus_per_proc, gpus_per_proc)}'
+        
+        else:
+            cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, gpus_per_proc)
         
         # create subprocess to execute task
         with open(d.path(f'{name}.out'), 'w') as f:
