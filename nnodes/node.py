@@ -382,29 +382,11 @@ class Node(Directory, tp.Generic[N]):
 
         return tp.cast(N, node)
     
-    def add_mp(self, cmd: tp.Union[str, tp.Callable], /,
-        nprocs: tp.Optional[tp.Union[int, tp.Callable[[Directory], int]]] = None, *,
-        name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
-        check_output: tp.Optional[tp.Callable[[str], None]] = None,
-        cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
-        timeout: tp.Optional[int] = None, ontimeout: tp.Optional[tp.Callable[[], None]] = None):
-        """Run multiprocessing task."""
-        from .root import root
-        from .mpiexec import mpiexec, getname
-
-        if nprocs is None:
-            nprocs = root.task_nprocs
-        
-        func = partial(mpiexec, cmd, nprocs, 1, 0, name, arg, arg_mpi, check_output, True, timeout, ontimeout)
-        node = self.add(func, cwd, name or getname(cmd), **(data or {}))
-        
-        return node
-    
     def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
         nprocs: tp.Optional[tp.Union[int, tp.Callable[[Directory], int]]] = None,
         cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0, *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
-        check_output: tp.Optional[tp.Callable[[str], None]] = None,
+        check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
         cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
         timeout: tp.Optional[int] = None, ontimeout: tp.Optional[tp.Callable[[], None]] = None):
         """Run MPI task."""
@@ -414,6 +396,9 @@ class Node(Directory, tp.Generic[N]):
         if nprocs is None:
             nprocs = root.task_nprocs
         
+        if use_multiprocessing is None:
+            use_multiprocessing = root.job.use_multiprocessing
+        
         if isinstance(gpus_per_proc, float):
             if not 0 < gpus_per_proc < 1:
                 raise ValueError('gpus_per_proc of type float must be a value between 0 and 1')
@@ -421,8 +406,8 @@ class Node(Directory, tp.Generic[N]):
             if isinstance(nprocs, int) and nprocs % round(1 / gpus_per_proc) != 0:
                 raise ValueError('nprocs * per_proc[1] must be an integer')
         
-        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, name, arg, arg_mpi, check_output,
-            root.job.use_multiprocessing, timeout, ontimeout)
+        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, name, arg, arg_mpi,
+            check_output, use_multiprocessing, timeout, ontimeout)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
         
         return node
