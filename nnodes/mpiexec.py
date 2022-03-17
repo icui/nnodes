@@ -52,7 +52,8 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
     nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: tp.Union[int, float],
     name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
     check_output: tp.Optional[tp.Callable[[str], None]], use_multiprocessing: bool,
-    timeout: tp.Optional[int], ontimeout: tp.Optional[tp.Callable[[], None]],
+    timeout: tp.Union[tp.Literal['auto'], float, None],
+    ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None],
     d: Directory) -> str:
     """Schedule the execution of MPI task"""
     # task queue controller
@@ -136,17 +137,24 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
 
             # execute in subprocess
             process = await asyncio.create_subprocess_shell(cmd, cwd=cwd, stdout=f, stderr=f)
+            
+            if timeout == 'auto':
+                if root.job.inqueue:
+                    timeout = root.job.remaining * 60
+                
+                else:
+                    timeout = None
 
             if timeout:
                 try:
                     await asyncio.wait_for(process.communicate(), timeout)
                 
                 except asyncio.TimeoutError as e:
-                    if ontimeout:
-                        ontimeout()
-                    
-                    else:
+                    if ontimeout == 'raise':
                         raise e
+
+                    elif ontimeout:
+                        ontimeout()
             
             else:
                 await process.communicate()

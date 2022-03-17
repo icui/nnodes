@@ -95,16 +95,21 @@ class Root(Node):
         self.job.aborted = False
 
         # requeue before job gets killed
-        if not self.job.debug:
+        if self.job.inqueue:
             signal.signal(signal.SIGALRM, self._signal)
-            signal.alarm(int((self.job.walltime - self.job.gap) * 60))
+            signal.alarm(int(self.job.remaining * 60))
 
         asyncio.create_task(self._ping())
         await super().execute()
 
-        # requeue job if task failed
-        if self.job.failed and not self.job.aborted and not self.job.debug and not self.job.paused:
-            self.job._signaled = True
+        # requeue job if the following conditions are satisfied:
+        # 1. job is allocated from job scheduler (can be requeued)
+        # 2. any task failed
+        # 3. no task failed twice in a row
+        # 4. job is not in debug mode
+        # 5. job is not already being requeued (due to insufficient walltime)
+        if self.job.inqueue and self.job.failed and not self.job.aborted \
+            and not self.job.debug and not self.job.paused:
             self.job.requeue()
     
     def save(self):

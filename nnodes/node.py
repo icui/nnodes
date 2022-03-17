@@ -388,7 +388,8 @@ class Node(Directory, tp.Generic[N]):
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
         check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
         cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
-        timeout: tp.Optional[int] = None, ontimeout: tp.Optional[tp.Callable[[], None]] = None):
+        timeout: tp.Union[tp.Literal['auto'], float, None] = 'auto',
+        ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None] = 'raise'):
         """Run MPI task."""
         from .root import root
         from .mpiexec import mpiexec, getname

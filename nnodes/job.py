@@ -1,4 +1,5 @@
 import typing as tp
+from time import time
 from abc import ABC, abstractmethod
 from os import path, environ
 from subprocess import check_call
@@ -36,6 +37,9 @@ class Job(ABC):
     # use multiprocessing instread of MPI
     use_multiprocessing = False
 
+    # execution start time
+    _exec_start: float
+
     # job is being requeued
     _signaled = False
 
@@ -69,16 +73,21 @@ class Job(ABC):
     def aborted(self, key: bool):
         self._state[2] = key
 
+    @property
+    def inqueue(self) -> bool:
+        """Job is allocated from scheduler (enables automatic requeue and mpiexec timeout)."""
+        return False
+    
+    @property
+    def remaining(self) -> float:
+        """Remaining walltime in minutes."""
+        return self.walltime - self.gap - (time() - self._exec_start) / 60
+
     def write(self, cmd: str, dst: str):
-        """Write job submission script to target directory (do nothing by default)."""
-        pass
+        """Write job submission script to target directory."""
 
     def requeue(self):
-        """Resubmit current job (do nothing by default)."""
-        from .root import root
-        
-        root.job.paused = False
-        root.job._signaled = False
+        """Resubmit current job."""
 
     # run a MPI task
     @abstractmethod
@@ -97,6 +106,9 @@ class Job(ABC):
 
         for key, val in job.items():
             setattr(self, key, val)
+        
+        # execution start time
+        self._exec_start = time()
 
     def create(self, dst: tp.Optional[str] = None):
         """Creates a directory as job workspace."""
@@ -123,6 +135,10 @@ class Job(ABC):
 
 class LSF(Job):
     """LSF-based cluster."""
+    @property
+    def inqueue(self):
+        return bool(environ.get('LSB_JOBID')) and environ.get('LSB_INTERACTIVE') != 'Y'
+
     def write(self, cmd, dst):
         from .root import root
 
@@ -166,11 +182,8 @@ class LSF(Job):
 
     def requeue(self):
         """Run current job again."""
-        if environ.get('LSB_INTERACTIVE') != 'Y':
+        if self.inqueue:
             check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
-
-        else:
-            super().requeue()
 
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0):
         """Get the command to call MPI."""
