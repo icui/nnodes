@@ -1,6 +1,8 @@
 from __future__ import annotations
 import typing as tp
 import signal
+import asyncio
+from time import time
 
 from .node import Node, parse_import
 
@@ -13,9 +15,6 @@ class Root(Node):
     """Root node with job configuration."""
     # import path for job scheduler
     system: tp.List[str]
-
-    # default number of nodes to run MPI tasks (if task_nnodes is None, task_nprocs must be set)
-    task_nnodes: tp.Optional[int]
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: tp.Optional[MPI] = None
@@ -43,20 +42,6 @@ class Root(Node):
     @property
     def mpi(self) -> MPI:
         return tp.cast('MPI', self._mpi)
-
-    @property
-    def task_nprocs(self) -> int:
-        """Default number of processors to run MPI tasks."""
-        if 'task_nprocs' in self._data:
-            return self._data['task_nprocs']
-
-        if 'task_nprocs' in self._init:
-            return self._init['task_nprocs']
-
-        if self.task_nnodes is None:
-            raise KeyError('default number of MPI processes (task_nprocs or task_nnodes) is not set')
-
-        return self.task_nnodes * self.job.cpus_per_node
     
     def init(self, /, mpidir: tp.Optional[str] = None):
         """Restore state."""
@@ -93,15 +78,21 @@ class Root(Node):
         self.job.aborted = False
 
         # requeue before job gets killed
-        if not self.job.debug:
+        if self.job.inqueue:
             signal.signal(signal.SIGALRM, self._signal)
-            signal.alarm(int((self.job.walltime - self.job.gap) * 60))
+            signal.alarm(int(self.job.remaining * 60))
 
+        asyncio.create_task(self._ping())
         await super().execute()
 
-        # requeue job if task failed
-        if self.job.failed and not self.job.aborted and not self.job.debug and not self.job.paused:
-            self.job._signaled = True
+        # requeue job if the following conditions are satisfied:
+        # 1. job is allocated from job scheduler (can be requeued)
+        # 2. any task failed
+        # 3. no task failed twice in a row
+        # 4. job is not in debug mode
+        # 5. job is not already being requeued (due to insufficient walltime)
+        if self.job.inqueue and self.job.failed and not self.job.aborted \
+            and not self.job.debug and not self.job.paused:
             self.job.requeue()
     
     def save(self):
@@ -114,8 +105,17 @@ class Root(Node):
             # root can only be saved from main process
             raise RuntimeError('cannot save root from MPI process')
         
+        self._init['_ping'] = time()
         self.dump(self.__getstate__(), '_root.pickle')
         self.mv('_root.pickle', 'root.pickle')
+    
+    async def _ping(self):
+        """Periodically save to root.pickle."""
+        await asyncio.sleep(60)
+
+        if not self.done:
+            self.save()
+            asyncio.create_task(self._ping())
 
     def _signal(self, *_):
         """Requeue due to insufficient time."""

@@ -1,12 +1,1 @@
-[job]
-name = "nnodes"
-nnodes = 64
-account = "GEO111"
-walltime = 120.0
-gap = 2.0
-debug = false
-system = ["nnodes.job", "Local"]
-
-[root]
-task = ["nnodes.tests", "test"]
-task_nnodes = 1
+examples/tests/config.toml

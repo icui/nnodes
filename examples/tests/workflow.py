@@ -19,7 +19,7 @@ def test_serial(node):
     node.add('echo "    > test 3"', name="echo")
 
     # approach 4: import path of function
-    node.add(('nnodes.tests', 'test_serial_print'), out='    > test 4')
+    node.add(('workflow', 'test_serial_print'), out='    > test 4')
 
 
 def test_serial_print(node):
@@ -52,8 +52,22 @@ def test_mpi(node):
     node.add_mpi(test_mpi_print, 4, arg='test mpi 2', name='test_mpi_print1')
     node.add_mpi(test_mpi_print, arg='test mpi 3', name='test_mpi_print2')
 
+    # use multiprocessing
+    node.add_mp(test_mpi_print, arg='test mpi 4', name='test_mpi_print3')
+
     # approach 3: function process-dependent arguments and default number of MPI processes
     node.add_mpi(test_mpi_write, arg_mpi=list(range(100)))
+
+    # test MPI timeout
+    node.add_mpi(test_mpi_timeout, timeout=3, ontimeout=test_mpi_ontimeout)
+
+
+async def test_mpi_timeout():
+    await asyncio.sleep(60)
+
+
+def test_mpi_ontimeout():
+    print('    > test 8')
 
 
 def test_mpi_print(arg):
