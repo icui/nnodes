@@ -33,7 +33,7 @@ class Job:
     # whether a node can run multiple MPI tasks
     node_splittable = False
 
-    # use multiprocessing instread of MPI
+    # use multiprocessing instead of MPI
     use_multiprocessing = False
 
     # execution start time

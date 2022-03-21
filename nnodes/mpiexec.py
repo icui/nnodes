@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 from functools import partial
-from math import ceil, inf
+from math import ceil
 from time import time
 from datetime import timedelta
 from fractions import Fraction
