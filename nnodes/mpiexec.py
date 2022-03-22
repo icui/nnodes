@@ -47,8 +47,8 @@ def getname(cmd: tp.Union[str, tp.Callable]) -> str:
 
 
 async def mpiexec(cmd: tp.Union[str, tp.Callable],
-    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: tp.Union[int, float],
-    name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
+    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: int,
+    mps: tp.Optional[int], name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
     check_output: tp.Optional[tp.Callable[[str], None]], use_multiprocessing: bool,
     timeout: tp.Union[tp.Literal['auto'], float, None],
     ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None],
@@ -75,9 +75,12 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         
         else:
             nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
+            
+            if mps:
+                nnodes = max(nnodes, Fraction(nprocs, mps))
 
-            if gpus_per_proc > 0:
-                nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc / root.job.gpus_per_node))
+            elif gpus_per_proc > 0:
+                nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc, root.job.gpus_per_node))
             
             if not root.job.node_splittable:
                 nnodes = Fraction(int(ceil(nnodes)))
