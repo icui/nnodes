@@ -11,21 +11,19 @@ from .root import root
 from .directory import Directory
 
 
-# pending tasks
-_pending: tp.Dict[asyncio.Lock, Fraction] = {}
+# pending tasks (Fraction for MPI tasks, int for multiprocessing tasks)
+_pending: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
 
-# running tasks
-_running: tp.Dict[asyncio.Lock, Fraction] = {}
+# running tasks (Fraction for MPI tasks, int for multiprocessing tasks)
+_running: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
 
 
-def _dispatch(lock: asyncio.Lock, nnodes: Fraction) -> bool:
+def _dispatch(lock: asyncio.Lock, nnodes: tp.Union[Fraction, int]) -> bool:
     """Execute a task if resource is available."""
-    ntotal = root.job.nnodes
+    ntotal = root.job.mp_nprocs_max if (mp := isinstance(nnodes, int)) else root.job.nnodes
+    nrunning = sum(v for v in _running.values() if isinstance(v, int) == mp)
 
-    if nnodes > ntotal:
-        raise RuntimeError(f'Insufficient nodes ({nnodes} / {ntotal})')
-
-    if nnodes <= ntotal - sum(_running.values()):
+    if nrunning == 0 or nnodes <= ntotal - nrunning:
         _running[lock] = nnodes
         return True
     
@@ -72,21 +70,24 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nprocs = min(len(arg_mpi), nprocs)
 
         # calculate node number
-        nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
-
-        if gpus_per_proc > 0:
-            nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc / root.job.gpus_per_node))
+        if use_multiprocessing:
+            nnodes = nprocs
         
-        if not root.job.node_splittable:
-            nnodes = Fraction(int(ceil(nnodes)))
+        else:
+            nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
+
+            if gpus_per_proc > 0:
+                nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc / root.job.gpus_per_node))
+            
+            if not root.job.node_splittable:
+                nnodes = Fraction(int(ceil(nnodes)))
 
         # wait for node resources
-        if not use_multiprocessing:
-            await lock.acquire()
+        await lock.acquire()
 
-            if not _dispatch(lock, nnodes):
-                _pending[lock] = nnodes
-                await lock.acquire()
+        if not _dispatch(lock, nnodes):
+            _pending[lock] = nnodes
+            await lock.acquire()
         
         # set dispatchtime for node
         if hasattr(d, '_dispatchtime'):
@@ -128,7 +129,7 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         
         # wrap with parallel execution command
         if use_multiprocessing:
-            cmd = f'{cmd} -mp {nprocs * max(cpus_per_proc, gpus_per_proc)}'
+            cmd = f'{cmd} -mp {nprocs}'
         
         else:
             cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, gpus_per_proc)

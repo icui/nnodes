@@ -36,6 +36,9 @@ class Job:
     # use multiprocessing instead of MPI
     use_multiprocessing = False
 
+    # maximum number of processes spawned with multiprocessing
+    mp_nprocs_max: int = 20
+
     # execution start time
     _exec_start: float
 
