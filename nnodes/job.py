@@ -33,8 +33,11 @@ class Job:
     # whether a node can run multiple MPI tasks
     node_splittable = False
 
-    # use multiprocessing instread of MPI
+    # use multiprocessing instead of MPI
     use_multiprocessing = False
+
+    # maximum number of processes spawned with multiprocessing
+    mp_nprocs_max: int = 20
 
     # execution start time
     _exec_start: float

@@ -384,7 +384,7 @@ class Node(Directory, tp.Generic[N]):
     
     def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
         nprocs: tp.Union[int, tp.Callable[[Directory], int]] = 1,
-        cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0, *,
+        cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: tp.Optional[int] = None, *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
         check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
         cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
@@ -397,14 +397,10 @@ class Node(Directory, tp.Generic[N]):
         if use_multiprocessing is None:
             use_multiprocessing = root.job.use_multiprocessing
         
-        if isinstance(gpus_per_proc, float):
-            if not 0 < gpus_per_proc < 1:
-                raise ValueError('gpus_per_proc of type float must be a value between 0 and 1')
-
-            if isinstance(nprocs, int) and nprocs % round(1 / gpus_per_proc) != 0:
-                raise ValueError('nprocs * per_proc[1] must be an integer')
+        if mps and gpus_per_proc != 0:
+            print('warning: gpus_per_proc is ignored because mps is set')
         
-        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, name, arg, arg_mpi,
+        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name, arg, arg_mpi,
             check_output, use_multiprocessing, timeout, ontimeout)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
         

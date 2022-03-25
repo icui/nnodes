@@ -5,6 +5,7 @@ account = "GEO111"
 walltime = 120.0
 gap = 2.0
 debug = false
+mp_nprocs_max = 2
 system = ["nnodes.job", "Local"]
 
 [root]
