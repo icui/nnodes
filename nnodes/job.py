@@ -94,9 +94,9 @@ class Job:
     def requeue(self):
         """Resubmit current job."""
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str:
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None) -> str:
         """Run a MPI task."""
-        raise NotImplementedError(f'mpiexec is not implemented ({cmd}, {nprocs}, {cpus_per_proc}, {gpus_per_proc})')
+        raise NotImplementedError(f'mpiexec is not implemented ({cmd})')
 
     def __init__(self, job: dict, state: list):
         # job state (paused, failed, aborted)
@@ -190,7 +190,7 @@ class LSF(Job):
         if self.inqueue:
             check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
         jsrun = 'jsrun'
 
@@ -200,11 +200,11 @@ class LSF(Job):
         
         a = 1
 
-        if isinstance(gpus_per_proc, float):
-            a = round(1 / gpus_per_proc)
-            cpus_per_proc *= a
+        if mps is not None:
+            a = mps
+            cpus_per_proc *= mps
             gpus_per_proc = 1
-            nprocs //= a
+            nprocs //= mps
 
         return f'{jsrun} -n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc} {cmd}'
 
@@ -260,6 +260,6 @@ class LocalMPI(Local):
     """Local computer with MPI installed."""
     use_multiprocessing = False
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+    def mpiexec(self, cmd: str, nprocs: int, *_):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'

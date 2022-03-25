@@ -11,7 +11,7 @@ import typing as tp
 from .directory import Directory
 
 
-def parse_import(path: tp.Iterable[str]) -> tp.Any:
+def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
         target = import_module(path[0])
@@ -23,17 +23,36 @@ def parse_import(path: tp.Iterable[str]) -> tp.Any:
     
     return path
 
+
+def getname(task: Task) -> str | None:
+    """Get default task name."""
+    if isinstance(task, (list, tuple)):
+        return task[-1]
+    
+    if isinstance(task, str):
+        return task.split('.')[-1]
+
+    while isinstance(task, partial):
+        task = task.func
+    
+    if hasattr(task, '__name__'):
+        return task.__name__.lstrip('_')
+
+
 # generic Node type for parent and children
 N = tp.TypeVar('N', bound='Node')
+
+# type for a node task
+Task = tp.Callable | tp.List[str] | tp.Tuple[str, ...] | str
 
 
 class Node(Directory, tp.Generic[N]):
     """A directory with a task."""
     # node task
-    task: Task
+    task: Task | None
 
     # task progress prober
-    prober: Prober
+    prober: tp.Callable[[N], float | str | None] | None
 
     # whether child nodes are executed concurrently
     concurrent: tp.Optional[bool]
@@ -74,21 +93,9 @@ class Node(Directory, tp.Generic[N]):
         if self._name is not None:
             return self._name
 
-        func = self.task
-        
-        if func:
-            # use task name as node name
-            if isinstance(func, (list, tuple)):
-                return func[1]
-            
-            if isinstance(func, str):
-                return func.split('.')[-1]
-
-            while isinstance(func, partial):
-                func = func.func
-            
-            if hasattr(func, '__name__'):
-                return func.__name__.lstrip('_')
+        # use task name
+        if self.task and (name := getname(self.task)):
+            return name
 
         # use directory name as node name
         return path.basename(self.path(abs=True))
@@ -350,10 +357,10 @@ class Node(Directory, tp.Generic[N]):
         """Update properties from dict."""
         self._data.update(items)
 
-    def add(self, task: Task[tp.Any] = None, /,
+    def add(self, task: Task | None = None, /,
         cwd: tp.Optional[str] = None, name: tp.Optional[str] = None, *,
-        args: tp.Optional[tp.Union[list, tuple]] = None,
-        concurrent: tp.Optional[bool] = None, prober: Prober = None, **data) -> N:
+        args: list | tuple | None = None, concurrent: tp.Optional[bool] = None,
+        prober: tp.Callable[[N], float | str | None] | None = None, **data) -> N:
         """Add a child node or a child task."""
         if task is not None:
             if isinstance(task, (list, tuple)):
@@ -382,17 +389,17 @@ class Node(Directory, tp.Generic[N]):
 
         return tp.cast(N, node)
     
-    def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
-        nprocs: tp.Union[int, tp.Callable[[Directory], int]] = 1,
+    def add_mpi(self, cmd: Task, /,
+        nprocs: int | tp.Callable[[Directory], int] = 1,
         cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: tp.Optional[int] = None, *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
         check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
         cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
-        timeout: tp.Union[tp.Literal['auto'], float, None] = 'auto',
-        ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None] = 'raise'):
+        timeout: tp.Literal['auto'] | float | None = 'auto',
+        ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise'):
         """Run MPI task."""
         from .root import root
-        from .mpiexec import mpiexec, getname
+        from .mpiexec import mpiexec
 
         if use_multiprocessing is None:
             use_multiprocessing = root.job.use_multiprocessing
@@ -446,9 +453,3 @@ class Node(Directory, tp.Generic[N]):
                     stat += str(node)
         
         return stat
-
-
-# type annotation for a node task function
-T = tp.TypeVar('T', bound='Node')
-Task = tp.Optional[tp.Union[tp.Callable[[T], tp.Optional[tp.Coroutine]], tp.Tuple[str, str], str]]
-Prober = tp.Optional[tp.Callable[[Node], tp.Union[float, str, None]]]
