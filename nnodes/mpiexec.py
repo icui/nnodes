@@ -1,7 +1,6 @@
 from __future__ import annotations
 import asyncio
 import typing as tp
-from functools import partial
 from math import ceil
 from time import time
 from datetime import timedelta
@@ -33,8 +32,8 @@ def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
 
 async def mpiexec(cmd: Task,
     nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
-    mps: tp.Optional[int], name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
-    check_output: tp.Optional[tp.Callable[[str], None]], use_multiprocessing: bool,
+    mps: int | None, name: str | None, arg: tp.Any, arg_mpi: list | tuple | None,
+    check_output: tp.Callable[[str, str], None] | None, use_multiprocessing: bool | None,
     timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
     d: Directory) -> str:
     """Schedule the execution of MPI task"""
@@ -84,7 +83,7 @@ async def mpiexec(cmd: Task,
         if hasattr(d, '_dispatchtime'):
             setattr(d, '_dispatchtime', time())
 
-        # save function as pickle to run in parallel
+        # determine file name for log, stdout and stderr
         if name is None:
             name = getname(cmd)
 
@@ -94,8 +93,13 @@ async def mpiexec(cmd: Task,
             else:
                 name = 'mpiexec_' + name
         
-        # import task
+        i = 1
+        while d.has(f'{name}.log'):
+            name = f'{name}#{i}'
+            i += 1
         
+        
+        # import task
         if isinstance(cmd, (list, tuple)):
             task = parse_import(cmd)
         
@@ -106,6 +110,7 @@ async def mpiexec(cmd: Task,
             raise NotImplementedError('cannot add arguments to shell command')
 
         if callable(task) or use_multiprocessing:
+            # save function as pickle to run in parallel
             if arg_mpi:
                 # assign a chunk of arg_mpi to each processor
                 arg_mpi = sorted(arg_mpi)
@@ -139,14 +144,15 @@ async def mpiexec(cmd: Task,
         else:
             task = root.job.mpiexec(task, nprocs, cpus_per_proc, gpus_per_proc, mps)
         
+        # write the command actually used
+        d.write(f'{task}\n', f'{name}.log')
+        time_start = time()
+        
         # create subprocess to execute task
-        with open(d.path(f'{name}.out'), 'w') as f:
-            # write command
-            f.write(f'{task}\n\n')
-            time_start = time()
+        with open(d.path(f'{name}.stdout'), 'w') as f_o, open(d.path(f'{name}.stderr'), 'w') as f_e:
 
             # execute in subprocess
-            process = await asyncio.create_subprocess_shell(task, cwd=cwd, stdout=f, stderr=f)
+            process = await asyncio.create_subprocess_shell(task, cwd=cwd, stdout=f_o, stderr=f_e)
             
             if timeout == 'auto':
                 if root.job.inqueue:
@@ -168,18 +174,19 @@ async def mpiexec(cmd: Task,
             
             else:
                 await process.communicate()
+            
+        # custom function to resolve output
+        if check_output:
+            check_output(d.read(f'{name}.stdout'), d.read(f'{name}.stderr'))
 
-            # write elapsed time
-            f.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n')
+        # write elapsed time
+        d.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n', f'{name}.log', 'a')
 
         if d.has(f'{name}.error'):
             raise RuntimeError(d.read(f'{name}.error'))
 
         elif process.returncode:
             raise RuntimeError(f'{task}\nexit code: {process.returncode}')
-        
-        elif check_output:
-            check_output(d.read(f'{name}.out'))
     
     except Exception as e:
         err = e

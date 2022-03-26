@@ -7,13 +7,13 @@ from subprocess import check_call
 class Job:
     """Base class for clusters."""
     # job name
-    name: tp.Optional[str] = None
+    name: str | None = None
 
     # number of nodes to request
     nnodes: int
 
     # account to submit the job
-    account: tp.Optional[str] = None
+    account: str | None = None
 
     # amount of walltime to request
     walltime: float
@@ -115,7 +115,7 @@ class Job:
         # execution start time
         self._exec_start = time()
 
-    def create(self, dst: tp.Optional[str] = None):
+    def create(self, dst: str | None = None):
         """Creates a directory as job workspace."""
         from .root import root
 
@@ -187,8 +187,7 @@ class LSF(Job):
 
     def requeue(self):
         """Run current job again."""
-        if self.inqueue:
-            check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
+        check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""

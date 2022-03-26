@@ -46,14 +46,15 @@ async def test_concurrent2(node):
 def test_mpi(node):
     """Test MPI calls."""
     # approach 1: shell command
-    node.add_mpi('echo "test mpi 1"', 4)
+    node.add_mpi('echo "test mpi/mpi 1"', 4)
 
     # approach 2: function (only config.toml is loaded in MPI processes, not root.pickle)
-    node.add_mpi(test_mpi_print, 4, arg='test mpi 2', name='test_mpi_print1')
-    node.add_mpi(test_mpi_print, arg='test mpi 3', name='test_mpi_print2')
+    node.add_mpi(test_mpi_print, 4, arg='test mpi/mpi 2', name='test_mpi_print1')
+    node.add_mpi(test_mpi_print, arg='test mpi/mpi 3', name='test_mpi_print2', check_output=test_mpi_check1)
+    node.add_mpi(test_mpi_print, arg='test mpi/mpi 3', name='test_mpi_print2', check_output=test_mpi_check2)
 
     # use multiprocessing
-    node.add_mpi(test_mpi_print, arg='test mpi 4', name='test_mpi_print3', use_multiprocessing=True)
+    node.add_mpi(test_mpi_print, arg='test mpi/mpi 4', name='test_mpi_print3', use_multiprocessing=True)
 
     # approach 3: function process-dependent arguments and default number of MPI processes
     node.add_mpi(test_mpi_write, arg_mpi=list(range(100)))
@@ -79,3 +80,12 @@ def test_mpi_write(arg):
     import numpy as np
 
     root.mpi.mpidump(np.array(arg))
+
+
+def test_mpi_check1(stdout):
+    print(f'stdout:', stdout.replace('\n', ''))
+
+
+def test_mpi_check2(stdout, stderr):
+    print(f'stdout:', stdout.replace('\n', ''))
+    print(f'stderr:', stderr.replace('\n', ''))

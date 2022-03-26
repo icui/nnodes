@@ -162,7 +162,7 @@ class Directory:
         """
         check_call('mkdir -p ' + self.path(dst), shell=True)
     
-    def ls(self, src: str = '.', grep: str = '*', isdir: tp.Optional[bool] = None) -> tp.List[str]:
+    def ls(self, src: str = '.', grep: str = '*', isdir: bool | None = None) -> tp.List[str]:
         """List items in a directory.
 
         Args:
