@@ -4,6 +4,7 @@ from sys import stderr
 from time import time
 from datetime import timedelta
 from functools import partial
+from inspect import signature
 from importlib import import_module
 import asyncio
 import typing as tp
@@ -22,6 +23,11 @@ def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
         return target
     
     return path
+
+
+def getnargs(func: tp.Callable) -> int:
+    """Get the number of arguments required by a function."""
+    return len(signature(func).parameters)
 
 
 def getname(task: Task) -> str | None:
@@ -52,7 +58,7 @@ class Node(Directory, tp.Generic[N]):
     task: Task | None
 
     # task progress prober
-    prober: tp.Callable[[N], float | str | None] | None
+    prober: tp.Callable[..., float | str | None] | None
 
     # whether child nodes are executed concurrently
     concurrent: bool | None
@@ -211,7 +217,7 @@ class Node(Directory, tp.Generic[N]):
                 else:
                     if self.prober:
                         try:
-                            state = self.prober(self)
+                            state = self.prober(self) if getnargs(self.prober) > 0 else self.prober()
 
                             if isinstance(state, float):
                                 name += f' ({int(state*100)}%)'
@@ -360,7 +366,7 @@ class Node(Directory, tp.Generic[N]):
     def add(self, task: Task | None = None, /,
         cwd: str | None = None, name: str | None = None, *,
         args: list | tuple | None = None, concurrent: bool | None = None,
-        prober: tp.Callable[[N], float | str | None] | None = None, **data) -> N:
+        prober: tp.Callable[..., float | str | None] | None = None, **data) -> N:
         """Add a child node or a child task."""
         if task is not None:
             if isinstance(task, (list, tuple)):

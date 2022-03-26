@@ -1,14 +1,13 @@
 from __future__ import annotations
 import asyncio
 import typing as tp
-from inspect import signature
 from math import ceil
 from time import time
 from datetime import timedelta
 from fractions import Fraction
 
 from .root import root
-from .node import getname, parse_import, Task
+from .node import getname, getnargs, parse_import, Task
 from .directory import Directory
 
 
@@ -178,7 +177,7 @@ async def mpiexec(cmd: Task,
             
         # custom function to resolve output
         if check_output:
-            nargs = len(signature(check_output).parameters)
+            nargs = getnargs(check_output)
 
             if nargs == 0:
                 check_output()
