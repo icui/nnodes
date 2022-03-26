@@ -393,7 +393,7 @@ class Node(Directory, tp.Generic[N]):
         nprocs: int | tp.Callable[[Directory], int] = 1,
         cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None, *,
         name: str | None = None, arg: tp.Any = None, arg_mpi: list | None = None,
-        check_output: tp.Callable[[str, str], None] | None = None, use_multiprocessing: bool | None = None,
+        check_output: tp.Callable[..., None] | None = None, use_multiprocessing: bool | None = None,
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
         ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise'):

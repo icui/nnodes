@@ -1,6 +1,7 @@
 from __future__ import annotations
 import asyncio
 import typing as tp
+from inspect import signature
 from math import ceil
 from time import time
 from datetime import timedelta
@@ -33,7 +34,7 @@ def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
 async def mpiexec(cmd: Task,
     nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
     mps: int | None, name: str | None, arg: tp.Any, arg_mpi: list | tuple | None,
-    check_output: tp.Callable[[str, str], None] | None, use_multiprocessing: bool | None,
+    check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
     timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
     d: Directory) -> str:
     """Schedule the execution of MPI task"""
@@ -177,7 +178,16 @@ async def mpiexec(cmd: Task,
             
         # custom function to resolve output
         if check_output:
-            check_output(d.read(f'{name}.stdout'), d.read(f'{name}.stderr'))
+            nargs = len(signature(check_output).parameters)
+
+            if nargs == 0:
+                check_output()
+            
+            elif nargs == 1:
+                check_output(d.read(f'{name}.stdout'))
+            
+            else:
+                check_output(d.read(f'{name}.stdout'), d.read(f'{name}.stderr'))
 
         # write elapsed time
         d.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n', f'{name}.log', 'a')

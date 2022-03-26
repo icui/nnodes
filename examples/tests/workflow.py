@@ -83,9 +83,9 @@ def test_mpi_write(arg):
 
 
 def test_mpi_check1(stdout):
-    print(f'stdout:', stdout.replace('\n', ''))
+    print(f'stdout1:', stdout.replace('\n', ''))
 
 
 def test_mpi_check2(stdout, stderr):
-    print(f'stdout:', stdout.replace('\n', ''))
-    print(f'stderr:', stderr.replace('\n', ''))
+    print(f'stdout2:', stdout.replace('\n', ''))
+    print(f'stderr2:', stderr.replace('\n', ''))
