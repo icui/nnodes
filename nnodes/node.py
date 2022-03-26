@@ -403,7 +403,8 @@ class Node(Directory, tp.Generic[N]):
     def add_mpi(self, cmd: Task, /,
         nprocs: int | tp.Callable[[Directory], int] = 1,
         cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None, *,
-        name: str | None = None, arg: tp.Any = None, arg_mpi: list | None = None,
+        name: str | None = None, args: list | tuple | None = None,
+        mpiarg: list | tuple | None = None, group_mpiarg: bool = False,
         check_output: tp.Callable[..., None] | None = None, use_multiprocessing: bool | None = None,
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
@@ -418,8 +419,8 @@ class Node(Directory, tp.Generic[N]):
         if mps and gpus_per_proc != 0:
             print('warning: gpus_per_proc is ignored because mps is set')
         
-        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name, arg, arg_mpi,
-            check_output, use_multiprocessing, timeout, ontimeout)
+        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name,
+            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
         
         return node

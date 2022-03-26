@@ -61,21 +61,32 @@ def _call(size: int, idx: int):
         root.mpi.size = size
     
     # saved function and arguments from main process
-    (func, arg, arg_mpi) = root.load(f'{argv[1]}.pickle')
-
-    # determine function arguments
-    args = []
-
-    if arg is not None:
-        args.append(arg)
-
-    if arg_mpi is not None:
-        args.append(arg_mpi[root.mpi.rank])
+    (func, args, mpiarg, group_mpiarg) = root.load(f'{argv[1]}.pickle')
+    
 
     # call target function
     if callable(func):
-        if asyncio.iscoroutine(result := func(*args)):
-            asyncio.run(result)
+        args_all = []
+    
+        if mpiarg:
+            if group_mpiarg:
+                # pass mpiarg as a list
+                args_all.append([mpiarg[root.mpi.rank]])
+            
+            else:
+                # pass mpiarg as individual args
+                for arg in mpiarg[root.mpi.rank]:
+                    args_all.append([arg])
+            
+        else:
+            args_all.append([])
+        
+        for a in args_all:
+            if args is not None:
+                a += args
+
+            if asyncio.iscoroutine(result := func(*a)):
+                asyncio.run(result)
     
     else:
         from subprocess import check_call

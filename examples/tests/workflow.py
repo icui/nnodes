@@ -54,15 +54,16 @@ def test_mpi(node):
     node.add_mpi('echo "test mpi/mpi 1"', 4)
 
     # approach 2: function (only config.toml is loaded in MPI processes, not root.pickle)
-    node.add_mpi(test_mpi_print, 4, arg='test mpi/mpi 2', name='test_mpi_print1')
-    node.add_mpi(test_mpi_print, arg='test mpi/mpi 3', name='test_mpi_print2', check_output=test_mpi_check1)
-    node.add_mpi(test_mpi_print, arg='test mpi/mpi 3', name='test_mpi_print2', check_output=test_mpi_check2)
+    node.add_mpi(test_mpi_print, 4, args=('test mpi/mpi 2',), name='test_mpi_print1')
+    node.add_mpi(test_mpi_print, args=('test mpi/mpi 3',), name='test_mpi_print2', check_output=test_mpi_check1)
+    node.add_mpi(test_mpi_print, args=('test mpi/mpi 3',), name='test_mpi_print2', check_output=test_mpi_check2)
 
     # use multiprocessing
-    node.add_mpi(test_mpi_print, arg='test mpi/mpi 4', name='test_mpi_print3', use_multiprocessing=True)
+    node.add_mpi(test_mpi_print, args=('test mpi/mpi 4',), name='test_mpi_print3', use_multiprocessing=True)
 
     # approach 3: function process-dependent arguments and default number of MPI processes
-    node.add_mpi(test_mpi_write, arg_mpi=list(range(100)))
+    node.add_mpi(test_mpi_write1, 7, mpiarg=list(range(100)))
+    node.add_mpi(test_mpi_write2, 7, mpiarg=list(range(100)), group_mpiarg=True)
 
     # test MPI timeout
     node.add_mpi(test_mpi_timeout, timeout=3, ontimeout=test_mpi_ontimeout)
@@ -80,7 +81,11 @@ def test_mpi_print(arg):
     print(arg)
 
 
-def test_mpi_write(arg):
+def test_mpi_write1(arg):
+    print(arg)
+
+
+def test_mpi_write2(arg):
     from nnodes import root
     import numpy as np
 

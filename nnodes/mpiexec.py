@@ -30,10 +30,25 @@ def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
     return False
 
 
+def splitargs(mpiarg: list | tuple, nprocs: int) -> list:
+    """Split arguments to n processes."""
+    # assign a chunk of arg_mpi to each processor
+    mpiarg = sorted(mpiarg)
+    args = []
+    chunk = int(ceil(len(mpiarg) / nprocs))
+
+    for i in range(nprocs - 1):
+        args.append(mpiarg[i * chunk: (i + 1) * chunk])
+    
+    args.append(mpiarg[(nprocs - 1) * chunk:])
+
+    return args
+
+
 async def mpiexec(cmd: Task,
     nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
-    mps: int | None, name: str | None, arg: tp.Any, arg_mpi: list | tuple | None,
-    check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
+    mps: int | None, name: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
+    group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
     timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
     d: Directory) -> str:
     """Schedule the execution of MPI task"""
@@ -49,8 +64,8 @@ async def mpiexec(cmd: Task,
             nprocs = nprocs(d)
 
         # remove unused proceesses
-        if arg_mpi:
-            nprocs = min(len(arg_mpi), nprocs)
+        if mpiarg:
+            nprocs = min(len(mpiarg), nprocs)
 
         # calculate node number
         if use_multiprocessing:
@@ -93,10 +108,13 @@ async def mpiexec(cmd: Task,
             else:
                 name = 'mpiexec_' + name
         
-        i = 1
-        while d.has(f'{name}.log'):
+        if d.has(f'{name}.log'):
+            i = 1
+            
+            while d.has(f'{name}#{i}.log'):
+                i += 1
+            
             name = f'{name}#{i}'
-            i += 1
         
         
         # import task
@@ -106,32 +124,21 @@ async def mpiexec(cmd: Task,
         else:
             task = cmd
         
-        if not callable(task) and (arg is not None or arg_mpi is not None):
-            raise NotImplementedError('cannot add arguments to shell command')
+        if not callable(task):
+            args = None
+            mpiarg = None
 
         if callable(task) or use_multiprocessing:
             # save function as pickle to run in parallel
-            if arg_mpi:
-                # assign a chunk of arg_mpi to each processor
-                arg_mpi = sorted(arg_mpi)
-                args = []
-                chunk = int(ceil(len(arg_mpi) / nprocs))
-                
-                # adjust number of processors
-                if nprocs * chunk > len(arg_mpi):
-                    nprocs -= (nprocs * chunk - len(arg_mpi)) // chunk
+            if args:
+                args = list(args)
 
-                for i in range(nprocs - 1):
-                    args.append(arg_mpi[i * chunk: (i + 1) * chunk])
-                
-                args.append(arg_mpi[(nprocs - 1) * chunk:])
-            
-            else:
-                args = None
+            if mpiarg:
+                mpiarg = splitargs(mpiarg, nprocs)
 
             cwd = None
             d.rm(f'{name}.*')
-            d.dump((task, arg, args), f'{name}.pickle')
+            d.dump((task, args, mpiarg, group_mpiarg), f'{name}.pickle')
             task = f'python -m "nnodes.mpi" {d.path(name)}'
         
         else:
