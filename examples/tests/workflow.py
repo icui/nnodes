@@ -2,6 +2,7 @@ import asyncio
 
 
 def test(node):
+    node.add(test_serial0)
     node.add(test_serial)
     node.add(test_concurrent, concurrent=True)
     node.add(test_mpi, cwd='test_mpi', concurrent=True)
@@ -20,6 +21,10 @@ def test_serial(node):
 
     # approach 4: import path of function
     node.add(('workflow', 'test_serial_print'), out='    > test 4')
+
+
+def test_serial0():
+    print('    > test 0')
 
 
 def test_serial_print(node):

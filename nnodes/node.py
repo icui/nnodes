@@ -280,6 +280,7 @@ class Node(Directory, tp.Generic[N]):
         try:
             # import task
             task = self.task
+            args = self.args
 
             if isinstance(task, (list, tuple)):
                 # import function from custom module
@@ -287,7 +288,7 @@ class Node(Directory, tp.Generic[N]):
             
             elif isinstance(task, str):
                 task = partial(self.call_async, task)
-                self.args = ()
+                args = ()
 
             # print to stdout
             indent = 0
@@ -298,10 +299,14 @@ class Node(Directory, tp.Generic[N]):
 
             print(' ' * indent + self.name)
 
-            # call task function
-            args = self.args if self.args is not None else [self]
-            if task and (result := task(*args)) and asyncio.iscoroutine(result):
-                await result
+            if task:
+                # set default argument
+                if args is None:
+                    args = [self] if getnargs(task) > 0 else ()
+                
+                # call task function
+                if (result := task(*args)) and asyncio.iscoroutine(result):
+                    await result
         
         except Exception as e:
             from traceback import format_exc
