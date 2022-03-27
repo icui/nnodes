@@ -218,7 +218,7 @@ class Summit(LSF):
 
 class Slurm(Job):
     """Slurm-based cluster."""
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
         return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
 
