@@ -47,7 +47,7 @@ def splitargs(mpiarg: list | tuple, nprocs: int) -> list:
 
 async def mpiexec(cmd: Task,
     nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
-    mps: int | None, name: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
+    mps: int | None, fname: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
     group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
     timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
     d: Directory) -> str:
@@ -99,22 +99,22 @@ async def mpiexec(cmd: Task,
             setattr(d, '_dispatchtime', time())
 
         # determine file name for log, stdout and stderr
-        if name is None:
-            name = getname(cmd)
+        if fname is None:
+            fname = getname(cmd)
 
-            if name is None:
-                name = 'mpiexec'
+            if fname is None:
+                fname = 'mpiexec'
             
             else:
-                name = 'mpiexec_' + name
+                fname = 'mpiexec_' + fname
         
-        if d.has(f'{name}.log'):
+        if d.has(f'{fname}.log'):
             i = 1
             
-            while d.has(f'{name}#{i}.log'):
+            while d.has(f'{fname}#{i}.log'):
                 i += 1
             
-            name = f'{name}#{i}'
+            fname = f'{fname}#{i}'
         
         
         # import task
@@ -137,9 +137,9 @@ async def mpiexec(cmd: Task,
                 mpiarg = splitargs(mpiarg, nprocs)
 
             cwd = None
-            d.rm(f'{name}.*')
-            d.dump((task, args, mpiarg, group_mpiarg), f'{name}.pickle')
-            task = f'python -m "nnodes.mpi" {d.path(name)}'
+            d.rm(f'{fname}.*')
+            d.dump((task, args, mpiarg, group_mpiarg), f'{fname}.pickle')
+            task = f'python -m "nnodes.mpi" {d.path(fname)}'
         
         else:
             cwd = d.path()
@@ -152,11 +152,11 @@ async def mpiexec(cmd: Task,
             task = root.job.mpiexec(task, nprocs, cpus_per_proc, gpus_per_proc, mps)
         
         # write the command actually used
-        d.write(f'{task}\n', f'{name}.log')
+        d.write(f'{task}\n', f'{fname}.log')
         time_start = time()
         
         # create subprocess to execute task
-        with open(d.path(f'{name}.stdout'), 'w') as f_o, open(d.path(f'{name}.stderr'), 'w') as f_e:
+        with open(d.path(f'{fname}.stdout'), 'w') as f_o, open(d.path(f'{fname}.stderr'), 'w') as f_e:
 
             # execute in subprocess
             process = await asyncio.create_subprocess_shell(task, cwd=cwd, stdout=f_o, stderr=f_e)
@@ -190,16 +190,16 @@ async def mpiexec(cmd: Task,
                 check_output()
             
             elif nargs == 1:
-                check_output(d.read(f'{name}.stdout'))
+                check_output(d.read(f'{fname}.stdout'))
             
             else:
-                check_output(d.read(f'{name}.stdout'), d.read(f'{name}.stderr'))
+                check_output(d.read(f'{fname}.stdout'), d.read(f'{fname}.stderr'))
 
         # write elapsed time
-        d.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n', f'{name}.log', 'a')
+        d.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n', f'{fname}.log', 'a')
 
-        if d.has(f'{name}.error'):
-            raise RuntimeError(d.read(f'{name}.error'))
+        if d.has(f'{fname}.error'):
+            raise RuntimeError(d.read(f'{fname}.error'))
 
         elif process.returncode:
             raise RuntimeError(f'{task}\nexit code: {process.returncode}')
@@ -226,4 +226,4 @@ async def mpiexec(cmd: Task,
     if err:
         raise err
 
-    return tp.cast(str, name)
+    return tp.cast(str, fname)
