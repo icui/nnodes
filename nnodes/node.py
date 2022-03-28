@@ -87,6 +87,9 @@ class Node(Directory, tp.Generic[N]):
     # time when task ended
     _endtime: float | None = None
 
+    # task is added from node.add_mpi()
+    _is_mpi: bool = False
+
     # exception raised from self.task
     _err: Exception | None = None
 
@@ -215,7 +218,11 @@ class Node(Directory, tp.Generic[N]):
                     name += ' (terminated)'
                 
                 else:
-                    if self.prober:
+                    if self._is_mpi and self._dispatchtime is None:
+                        # MPI task not yet allocated
+                        name += ' (pending)'
+                    
+                    elif self.prober:
                         try:
                             state = self.prober(self) if getnargs(self.prober) > 0 else self.prober()
 
@@ -229,8 +236,8 @@ class Node(Directory, tp.Generic[N]):
                             pass
                     
                     if name == self.name:
-                        # job exited unexpectedly
                         if time() - (root._init.get('_ping') or 0) > 70:
+                            # job exited unexpectedly
                             name += ' (not running)'
                         
                         else:
@@ -422,6 +429,7 @@ class Node(Directory, tp.Generic[N]):
         func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name,
             args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
+        node._is_mpi = True
         
         return node
     

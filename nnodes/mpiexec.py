@@ -51,7 +51,7 @@ async def mpiexec(cmd: Task,
     group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
     timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
     d: Directory) -> str:
-    """Schedule the execution of MPI task"""
+    """Schedule the execution of MPI task."""
     # task queue controller
     lock = asyncio.Lock()
 
