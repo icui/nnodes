@@ -135,7 +135,7 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             cmd = f'{cmd} -mp {nprocs}'
         
         else:
-            cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, gpus_per_proc)
+            cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, 1 / mps if mps else gpus_per_proc)
         
         # create subprocess to execute task
         with open(d.path(f'{name}.out'), 'w') as f:
