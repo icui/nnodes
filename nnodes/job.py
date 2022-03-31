@@ -169,7 +169,7 @@ class LSF(Job):
             f'#BSUB -W {hh:02d}:{mm:02d}',
             f'#BSUB -nnodes {self.nnodes}',
             f'#BSUB -o lsf.%J.o',
-            f'#BSUB -e lsf.%J.e'
+            f'#BSUB -e lsf.%J.e',
             f'#BSUB -alloc_flags "gpumps"'
         ]
 
