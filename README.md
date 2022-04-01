@@ -2,7 +2,7 @@
 
 A simple workflow manager.
 
-Intro slides ([PDF](https://raw.githubusercontent.com/icui/nnodes/main/doc/slides.pdf))
+Intro slides ([PDF](https://github.com/icui/nnodes/raw/main/doc/slides.pdf))
 
 ## What nnodes does
 

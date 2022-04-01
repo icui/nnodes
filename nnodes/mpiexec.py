@@ -77,7 +77,7 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
             
             if mps:
-                nnodes = max(nnodes, Fraction(nprocs, mps))
+                nnodes = max(nnodes, Fraction(nprocs, mps * root.job.gpus_per_node))
 
             elif gpus_per_proc > 0:
                 nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc, root.job.gpus_per_node))
