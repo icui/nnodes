@@ -4,6 +4,8 @@ A simple workflow manager.
 
 Intro slides ([PDF](https://github.com/icui/nnodes/raw/main/doc/slides.pdf))
 
+[Documentation](https://icui.github.io/nnodes/index.html)
+
 ## What nnodes does
 
 nnodes is a workflow manager that makes your life easier when defining or running complicated jobs either in your local computer or in a large-scale cluster. The basic element of nnodes is called a ```node```, which can:
