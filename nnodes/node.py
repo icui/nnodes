@@ -11,13 +11,17 @@ import typing as tp
 from .directory import Directory
 
 
-def parse_import(path: tp.Union[tp.List[str], tp.Tuple[str, str]]) -> tp.Any:
+def parse_import(path: tp.Iterable[str]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
-        return getattr(import_module(path[0]), path[1])
+        target = import_module(path[0])
+
+        for key in path[1:]:
+            target = getattr(target, key)
+        
+        return target
     
     return path
-
 
 # generic Node type for parent and children
 N = tp.TypeVar('N', bound='Node')
@@ -212,12 +216,17 @@ class Node(Directory, tp.Generic[N]):
                             pass
                     
                     if name == self.name:
-                        # Get current elapsed time
-                        celapsed = time() - (self._dispatchtime or self._starttime)
-                        dt = str(timedelta(seconds=int(round(celapsed))))
+                        # job exited unexpectedly
+                        if time() - (root._init.get('_ping') or 0) > 70:
+                            name += ' (not running)'
+                        
+                        else:
+                            # Get current elapsed time
+                            celapsed = time() - (self._dispatchtime or self._starttime)
+                            dt = str(timedelta(seconds=int(round(celapsed))))
 
-                        # Get attribute string
-                        name += f' (running - {dt})'
+                            # Get attribute string
+                            name += f' (running - {dt})'
         
         return name
 
@@ -264,12 +273,7 @@ class Node(Directory, tp.Generic[N]):
                 task = parse_import(task)
             
             elif isinstance(task, str):
-                if self.parent and self.parent.concurrent:
-                    task = partial(self.call_async, task)
-
-                else:
-                    task = partial(self.call, task)
-
+                task = partial(self.call_async, task)
                 self.args = ()
 
             # print to stdout
@@ -379,29 +383,25 @@ class Node(Directory, tp.Generic[N]):
         return tp.cast(N, node)
     
     def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
-        nprocs: tp.Optional[tp.Union[int, tp.Callable[[Directory], int]]] = None,
-        per_proc: tp.Union[int, tp.Tuple[int, tp.Union[int, float]]] = (1, 0), *,
+        nprocs: tp.Union[int, tp.Callable[[Directory], int]] = 1,
+        cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: tp.Optional[int] = None, *,
         name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
-        check_output: tp.Optional[tp.Callable[[str], None]] = None,
-        cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None):
+        check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
+        cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
+        timeout: tp.Union[tp.Literal['auto'], float, None] = 'auto',
+        ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None] = 'raise'):
         """Run MPI task."""
+        from .root import root
         from .mpiexec import mpiexec, getname
 
-        if nprocs is None:
-            from .root import root
-            nprocs = root.task_nprocs
-
-        if isinstance(per_proc, int):
-            per_proc = (per_proc, per_proc)
+        if use_multiprocessing is None:
+            use_multiprocessing = root.job.use_multiprocessing
         
-        if isinstance(per_proc[1], float):
-            if not 0 < per_proc[1] < 1:
-                raise ValueError('per_proc[1] of type float must be a value between 0 and 1')
-
-            if isinstance(nprocs, int) and nprocs % round(1 / per_proc[1]) != 0:
-                raise ValueError('nprocs * per_proc[1] must be an integer')
+        if mps and gpus_per_proc != 0:
+            print('warning: gpus_per_proc is ignored because mps is set')
         
-        func = partial(mpiexec, cmd, nprocs, per_proc[0], per_proc[1], name, arg, arg_mpi, check_output)
+        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name, arg, arg_mpi,
+            check_output, use_multiprocessing, timeout, ontimeout)
         node = self.add(func, cwd, name or getname(cmd), **(data or {}))
         
         return node

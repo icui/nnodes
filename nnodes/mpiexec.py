@@ -2,7 +2,7 @@ from __future__ import annotations
 import asyncio
 import typing as tp
 from functools import partial
-from math import ceil, inf
+from math import ceil
 from time import time
 from datetime import timedelta
 from fractions import Fraction
@@ -11,24 +11,19 @@ from .root import root
 from .directory import Directory
 
 
-# pending tasks
-_pending: tp.Dict[asyncio.Lock, Fraction] = {}
+# pending tasks (Fraction for MPI tasks, int for multiprocessing tasks)
+_pending: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
 
-# running tasks
-_running: tp.Dict[asyncio.Lock, Fraction] = {}
+# running tasks (Fraction for MPI tasks, int for multiprocessing tasks)
+_running: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
 
 
-def _dispatch(lock: asyncio.Lock, nnodes: Fraction) -> bool:
+def _dispatch(lock: asyncio.Lock, nnodes: tp.Union[Fraction, int]) -> bool:
     """Execute a task if resource is available."""
-    ntotal = root.job.nnodes
+    ntotal = root.job.mp_nprocs_max if (mp := isinstance(nnodes, int)) else root.job.nnodes
+    nrunning = sum(v for v in _running.values() if isinstance(v, int) == mp)
 
-    if root.job.use_multiprocessing:
-        ntotal = inf
-
-    if nnodes > ntotal:
-        raise RuntimeError(f'Insufficient nodes ({nnodes} / {ntotal})')
-
-    if nnodes <= ntotal - sum(_running.values()):
+    if nrunning == 0 or nnodes <= ntotal - nrunning:
         _running[lock] = nnodes
         return True
     
@@ -52,9 +47,12 @@ def getname(cmd: tp.Union[str, tp.Callable]) -> str:
 
 
 async def mpiexec(cmd: tp.Union[str, tp.Callable],
-    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: tp.Union[int, float],
-    name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
-    check_output: tp.Optional[tp.Callable[[str], None]], d: Directory) -> str:
+    nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: int,
+    mps: tp.Optional[int], name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
+    check_output: tp.Optional[tp.Callable[[str], None]], use_multiprocessing: bool,
+    timeout: tp.Union[tp.Literal['auto'], float, None],
+    ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None],
+    d: Directory) -> str:
     """Schedule the execution of MPI task"""
     # task queue controller
     lock = asyncio.Lock()
@@ -72,13 +70,20 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nprocs = min(len(arg_mpi), nprocs)
 
         # calculate node number
-        nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
-
-        if gpus_per_proc > 0:
-            nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc / root.job.gpus_per_node))
+        if use_multiprocessing:
+            nnodes = nprocs
         
-        if not root.job.node_splittable:
-            nnodes = Fraction(int(ceil(nnodes)))
+        else:
+            nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
+            
+            if mps:
+                nnodes = max(nnodes, Fraction(nprocs, mps * root.job.gpus_per_node))
+
+            elif gpus_per_proc > 0:
+                nnodes = max(nnodes, Fraction(nprocs * gpus_per_proc, root.job.gpus_per_node))
+            
+            if not root.job.node_splittable:
+                nnodes = Fraction(int(ceil(nnodes)))
 
         # wait for node resources
         await lock.acquire()
@@ -98,7 +103,7 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         if not callable(cmd) and (arg is not None or arg_mpi is not None):
             raise NotImplementedError('cannot add arguments to shell command')
 
-        if callable(cmd) or root.job.use_multiprocessing:
+        if callable(cmd) or use_multiprocessing:
             if arg_mpi:
                 # assign a chunk of arg_mpi to each processor
                 arg_mpi = sorted(arg_mpi)
@@ -126,7 +131,11 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             cwd = d.path()
         
         # wrap with parallel execution command
-        cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, gpus_per_proc)
+        if use_multiprocessing:
+            cmd = f'{cmd} -mp {nprocs}'
+        
+        else:
+            cmd = root.job.mpiexec(cmd, nprocs, cpus_per_proc, 1 / mps if mps else gpus_per_proc)
         
         # create subprocess to execute task
         with open(d.path(f'{name}.out'), 'w') as f:
@@ -136,7 +145,27 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
 
             # execute in subprocess
             process = await asyncio.create_subprocess_shell(cmd, cwd=cwd, stdout=f, stderr=f)
-            await process.communicate()
+            
+            if timeout == 'auto':
+                if root.job.inqueue:
+                    timeout = root.job.remaining * 60
+                
+                else:
+                    timeout = None
+
+            if timeout:
+                try:
+                    await asyncio.wait_for(process.communicate(), timeout)
+                
+                except asyncio.TimeoutError as e:
+                    if ontimeout == 'raise':
+                        raise e
+
+                    elif ontimeout:
+                        ontimeout()
+            
+            else:
+                await process.communicate()
 
             # write elapsed time
             f.write(f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n')
