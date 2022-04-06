@@ -61,10 +61,6 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
     # error occurred
     err = None
 
-    print(cmd)
-    print(nprocs)
-    print(cpus_per_proc)
-
     try:
         # get number of MPI processes
         if callable(nprocs):
