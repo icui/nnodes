@@ -89,7 +89,7 @@ def test_mpi_write2(arg):
     from nnodes import root
     import numpy as np
 
-    root.mpi.mpidump(np.array(arg))
+    root.mpi.dump(np.array(arg), f'p{root.mpi.rank:01d}.npy')
 
 
 def test_mpi_check1(stdout):
