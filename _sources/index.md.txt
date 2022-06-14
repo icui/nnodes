@@ -4,7 +4,8 @@
 ```{toctree}
 :hidden:
 
-introduction.md
+install.md
+basics/index.md
 tutorial/index.md
 reference/index.md
 ```

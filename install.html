@@ -3,10 +3,10 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Install" href="install.html" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Get started" href="basics/index.html" /><link rel="prev" title="nnodes" href="index.html" />
 
     <meta name="generator" content="sphinx-5.0.1, furo 2022.06.04.1"/>
-        <title>nnodes</title>
+        <title>Install - nnodes</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=d825bb20121282ca6aa443402c26c2a6473ce870" />
     <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
@@ -123,7 +123,7 @@
       </label>
     </div>
     <div class="header-center">
-      <a href="#"><div class="brand">nnodes</div></a>
+      <a href="index.html"><div class="brand">nnodes</div></a>
     </div>
     <div class="header-right">
       <div class="theme-toggle-container theme-toggle-header">
@@ -143,7 +143,7 @@
   <aside class="sidebar-drawer">
     <div class="sidebar-container">
       
-      <div class="sidebar-sticky"><a class="sidebar-brand" href="#">
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="index.html">
   
   
   <span class="sidebar-brand-text">nnodes</span>
@@ -154,8 +154,8 @@
   <input type="hidden" name="area" value="default">
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
-  <ul>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+  <ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Install</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="basics/index.html">Get started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="basics/intro.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="basics/example.html">Run examples</a></li>
@@ -210,70 +210,31 @@
           </label>
         </div>
         <article role="main">
-          <section id="nnodes">
-<h1>nnodes<a class="headerlink" href="#nnodes" title="Permalink to this heading">#</a></h1>
-<p>Nnodes is a simple workflow manager for Python functions and command line tools. It makes your life easier when running complicated jobs either in your local computer or in a large-scale cluster.</p>
-<p><a class="reference external" href="https://icui.github.io/nnodes/index.html">Documentation</a></p>
-<p>Intro slides (<a class="reference external" href="https://raw.githubusercontent.com/icui/nnodes/main/doc/source/files/slides.pdf">PDF</a>), poster (<a class="reference external" href="https://raw.githubusercontent.com/icui/nnodes/main/doc/source/files/poster.pdf">PDF</a>)</p>
-<section id="quick-start">
-<h2>Quick start<a class="headerlink" href="#quick-start" title="Permalink to this heading">#</a></h2>
-<p>Install</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pip install nnodes
+          <section id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this heading">#</a></h1>
+<p>There are two ways to install nnodes: PYPI and GitHub. The default version of nnodes require Python 3.10 or later, but remains a GitHub branch for older Python versions.</p>
+<section id="pypi-python-3-10">
+<h2>PYPI (Python &gt;= 3.10)<a class="headerlink" href="#pypi-python-3-10" title="Permalink to this heading">#</a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="n">nnodes</span>
 </pre></div>
 </div>
-<p>Run example workflow (Gaussian inversion, requires numpy)</p>
-<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/icui/nnodes
-<span class="nb">cd</span> nnodes/examples/gaussian
-nnrun
+</section>
+<section id="github">
+<h2>GitHub<a class="headerlink" href="#github" title="Permalink to this heading">#</a></h2>
+<p>Installing from GitHub offers more flexibility. You can optionally install in editable mode (add <code class="docutils literal notranslate"><span class="pre">-e</span></code> after <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span></code>) so that the changes you make to the Git directory will directly reflect to the nnodes Python module.</p>
+<p><code class="docutils literal notranslate"><span class="pre">main</span></code> branch is recommended for most users and is the default branch.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">icui</span><span class="o">/</span><span class="n">nnodes</span>
+<span class="n">cd</span> <span class="n">nnodes</span>
+<span class="n">pip</span> <span class="n">install</span> <span class="o">.</span>
 </pre></div>
 </div>
-<p>Check out <a class="reference external" href="https://icui.github.io/nnodes/basics/index.html">Get started</a> for details.</p>
-</section>
-<section id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this heading">#</a></h2>
-<ul class="simple">
-<li><p><strong>Progress control</strong>.
-No job progress will be lost in nnodes. The progress management is adaptable so that an interrupted workflow can be stopped and resumed at any point, and it is possible to rewind to a previous state if any parameter does not turn out to perform well; running a partial workflow or merging multiple workflows are also supported.<br>
-<img alt="Workflow" src="_images/inversion.png" /></p></li>
-<li><p><strong>MPI execution</strong>.
-Parallel execution of MPI tasks is easy and no manual configuration is required. An MPI task from any part of the workflow will be sent to an MPI executor and be executed whenever the cluster resources is available. This makes sure that the node hours are fully utilized.<br>
-<img alt="Workflow" src="_images/mpi.png" /></p></li>
-<li><p><strong>Parameter management</strong>.
-Inspired by HTML document, nnodes introduces a hierarchical parameter system that simplifies the process of passing parameters to functions. A parameter in the parent node will by default be propagated to the child node, unless overwritten. This eliminates the need to pass the same parameter to different functions under the same parent node.<br>
-<img alt="Workflow" src="_images/inherit.png" /></p></li>
-</ul>
-</section>
-<section id="why-nnodes">
-<h2>Why nnodes?<a class="headerlink" href="#why-nnodes" title="Permalink to this heading">#</a></h2>
-<p>Workflow manager is essential for many scientific applications and there is a large number of existing workflow managers available. Many of them are mature and well maintained (see <a class="reference external" href="https://workflows.community">Workflows Community</a> for a comprehensive list). However, we believe that nnodes still has unique advantages. In short, it is simpler than most general-purpose workflow managers and more flexible than most problem-specific workflow managers.</p>
-<ul class="simple">
-<li><p><strong>Simplicity</strong>. Most professional workflow managers have very steep learning curves, and are sometimes deeply bound with specific computing architectures. Nodes, on the other hand, provides a unified interface for all operations and utilizes only high level APIs. Migrating existing workflows to nnodes is seamless in most cases.</p></li>
-<li><p><strong>Flexibility</strong>. Nnodes is not tied to a specific scientific problem, and it is decided by the user how deeply they wish to integrate their projects with nnodes. Users can simply use nnodes as a progress controller, or MPI executor, which requires little code change, or they can go so far as to let nnodes manage their entire project.</p></li>
-<li><p><strong>Portability</strong>. Nnodes currently supports Slurm and LSF systems but also has API for users to define their custom environment. The workflow is saved in a single pickle file that can be transferred to a new system and continue from where it was left off. The MPI executor adapts automatically so no manual configuration is needed to utilize the full cluster resources.</p></li>
-</ul>
-</section>
-<section id="cluster-support">
-<h2>Cluster support<a class="headerlink" href="#cluster-support" title="Permalink to this heading">#</a></h2>
-<p>Nnodes has no strong connection with any specific job system, when running MPI tasks it just serves as a wrapper for commands like <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code>, <code class="docutils literal notranslate"><span class="pre">srun</span></code>, <code class="docutils literal notranslate"><span class="pre">jsrun</span></code>, etc. So it is easy to add a new cluster configuration with the configuration file. Nnodes has built-in support for:</p>
-<ul class="simple">
-<li><p>Slurm</p></li>
-<li><p>LSF</p></li>
-<li><p>Local computer with multiprocessing</p></li>
-</ul>
-</section>
-<section id="alternatives">
-<h2>Alternatives<a class="headerlink" href="#alternatives" title="Permalink to this heading">#</a></h2>
-<p>If you are looking for more options, below are some projects worth checking out:</p>
-<ul class="simple">
-<li><p><a class="reference external" href="https://radical-cybertools.github.io/entk/index.html">Ensemble Toolkit</a></p></li>
-<li><p><a class="reference external" href="https://materialsproject.github.io/fireworks/">FireWorks</a></p></li>
-<li><p><a class="reference external" href="https://workflows.community">Workflows Community</a></p></li>
-</ul>
-</section>
-<section id="contact">
-<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading">#</a></h2>
-<p>If you have any questions, please submit a ticket or send an <a class="reference external" href="mailto:ccui&#37;&#52;&#48;princeton&#46;edu">email</a>.</p>
-<div class="toctree-wrapper compound">
+<p><code class="docutils literal notranslate"><span class="pre">devel</span></code> branch is offers that latest improvements but is not stable. Use for testing only.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">icui</span><span class="o">/</span><span class="n">nnodes</span> <span class="o">--</span><span class="n">branch</span><span class="o">=</span><span class="n">devel</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">3.0</span></code> branch is for users using Python 3.9 or earlier, but it is not fully tested.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">icui</span><span class="o">/</span><span class="n">nnodes</span> <span class="o">--</span><span class="n">branch</span><span class="o">=</span><span class="mf">3.0</span>
+</pre></div>
 </div>
 </section>
 </section>
@@ -283,16 +244,26 @@ Inspired by HTML document, nnodes introduces a hierarchical parameter system tha
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="install.html">
+          <a class="next-page" href="basics/index.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Install</div>
+                <div class="title">Get started</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
-          
+          <a class="prev-page" href="index.html">
+              <svg><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Home</div>
+                
+              </div>
+            </a>
         </div>
         <div class="bottom-of-page">
           <div class="left-details">
@@ -325,13 +296,9 @@ Inspired by HTML document, nnodes introduces a hierarchical parameter system tha
         <div class="toc-tree-container">
           <div class="toc-tree">
             <ul>
-<li><a class="reference internal" href="#">nnodes</a><ul>
-<li><a class="reference internal" href="#quick-start">Quick start</a></li>
-<li><a class="reference internal" href="#features">Features</a></li>
-<li><a class="reference internal" href="#why-nnodes">Why nnodes?</a></li>
-<li><a class="reference internal" href="#cluster-support">Cluster support</a></li>
-<li><a class="reference internal" href="#alternatives">Alternatives</a></li>
-<li><a class="reference internal" href="#contact">Contact</a></li>
+<li><a class="reference internal" href="#">Install</a><ul>
+<li><a class="reference internal" href="#pypi-python-3-10">PYPI (Python &gt;= 3.10)</a></li>
+<li><a class="reference internal" href="#github">GitHub</a></li>
 </ul>
 </li>
 </ul>

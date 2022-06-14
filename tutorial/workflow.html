@@ -3,12 +3,12 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="MPI" href="mpi.html" /><link rel="prev" title="Node" href="node.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="MPI execution" href="mpi.html" /><link rel="prev" title="Node" href="node.html" />
 
     <meta name="generator" content="sphinx-5.0.1, furo 2022.06.04.1"/>
         <title>Workflow - nnodes</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d825bb20121282ca6aa443402c26c2a6473ce870" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
@@ -134,7 +134,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -155,14 +155,20 @@
 </form>
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../introduction.html">Introduction</a></li>
-<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="node.html">Node</a></li>
-<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Workflow</a></li>
-<li class="toctree-l2"><a class="reference internal" href="mpi.html">MPI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../basics/index.html">Get started</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l2"><a class="reference internal" href="../basics/intro.html">Introduction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basics/example.html">Run examples</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../basics/hello.html">Hello World!</a></li>
 </ul>
 </li>
-<li class="toctree-l1 has-children"><a class="reference internal" href="../reference/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
+<li class="toctree-l1 current has-children"><a class="reference internal" href="index.html">Tutorial</a><input checked="" class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="node.html">Node</a></li>
+<li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mpi.html">MPI execution</a></li>
+</ul>
+</li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="../reference/index.html">API Reference</a><input class="toctree-checkbox" id="toctree-checkbox-3" name="toctree-checkbox-3" role="switch" type="checkbox"/><label for="toctree-checkbox-3"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="../reference/directory.html">Directory</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../reference/node.html">Node</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../reference/root.html">Root</a></li>
@@ -198,7 +204,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -206,6 +212,20 @@
         <article role="main">
           <section id="workflow">
 <h1>Workflow<a class="headerlink" href="#workflow" title="Permalink to this heading">#</a></h1>
+<section id="property-and-directory">
+<h2>Property and directory<a class="headerlink" href="#property-and-directory" title="Permalink to this heading">#</a></h2>
+<p>Nnodes introduces a hierarchical structure to manage properties and directories. This is inspired by the styling of HTML document, in which properties will by default propagate to the child nodes and can be overwritten if necessary. Below is an example a partial full waveform inversion workflow. Functions in the workflow require parameters like iteration number, simulation mode, current model, etc. With nnodes, these parameters are only required to be defined once.</p>
+<p><img alt="Workflow" src="../_images/fwi.png" /></p>
+<p>The code to define the structure above is appended below. The same mechanism applies to directories as well, the function <code class="docutils literal notranslate"><span class="pre">step_03</span></code>, for instance, is run under directory <code class="docutils literal notranslate"><span class="pre">iter_03/step_03</span></code> because cwd parameter is passed when defining the iteration and search step.</p>
+<p><img alt="Workflow" src="../_images/fwi_code.png" /></p>
+</section>
+<section id="progress-control">
+<h2>Progress control<a class="headerlink" href="#progress-control" title="Permalink to this heading">#</a></h2>
+<p>A node has four possible states: <code class="docutils literal notranslate"><span class="pre">pending</span></code>, <code class="docutils literal notranslate"><span class="pre">running</span></code>, <code class="docutils literal notranslate"><span class="pre">done</span></code>, <code class="docutils literal notranslate"><span class="pre">terminated</span></code>, or <code class="docutils literal notranslate"><span class="pre">failed</span></code>. The following example shows the behavior of nnodes when a node fails.</p>
+<p><img alt="Workflow" src="../_images/fwi2.png" /></p>
+<p>When any node is terminated or fails, the workflow will exit. In this example, the line search <code class="docutils literal notranslate"><span class="pre">step_02</span></code> fails and the workflow will exit. By default, if this is the first time that <code class="docutils literal notranslate"><span class="pre">step_02</span></code> fails, the current job will automatically re-submit. You can also choose to re-submit manually. When the workflow runs again, it will directly go to step_02 because all previous steps have been marked as <code class="docutils literal notranslate"><span class="pre">done</span></code>.</p>
+<p>It is also possible to manually tweak a node state. If, for example, you wish to run misfit calculation again, you can simply set the state of misfit to <code class="docutils literal notranslate"><span class="pre">pending</span></code>, and when running the workflow again, the workflow will redo the misfit calculation.</p>
+</section>
 </section>
 
         </article>
@@ -218,7 +238,7 @@
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">MPI</div>
+                <div class="title">MPI execution</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -253,8 +273,28 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Workflow</a><ul>
+<li><a class="reference internal" href="#property-and-directory">Property and directory</a></li>
+<li><a class="reference internal" href="#progress-control">Progress control</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
