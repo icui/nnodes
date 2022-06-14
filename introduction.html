@@ -1,14 +1,15 @@
 <!doctype html>
-<html class="no-js">
+<html class="no-js" lang="en">
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <meta name="color-scheme" content="light dark"><link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Quick Start" href="quickstart.html" /><link rel="prev" title="nnodes" href="index.html" />
+    <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Tutorial" href="tutorial/index.html" /><link rel="prev" title="nnodes" href="index.html" />
 
-    <meta name="generator" content="sphinx-4.0.2, furo 2022.02.23"/>
+    <meta name="generator" content="sphinx-5.0.1, furo 2022.06.04.1"/>
         <title>Introduction - nnodes</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=3c656993158f05539f962c5cea52a5e6c184bb8c" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=25ceb02ed1c46dc30f2321ff83e92799f69dfdb9" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?digest=40978830699223671f4072448e654b5958f38b89" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
 
@@ -19,24 +20,28 @@
   --color-code-foreground: black;
   
   }
-  body[data-theme="dark"] {
-    --color-code-background: #202020;
-  --color-code-foreground: #d0d0d0;
-  
-  }
-  @media (prefers-color-scheme: dark) {
-    body:not([data-theme="light"]) {
+  @media not print {
+    body[data-theme="dark"] {
       --color-code-background: #202020;
   --color-code-foreground: #d0d0d0;
   
     }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
   }
 </style></head>
   <body>
+    
     <script>
       document.body.dataset.theme = localStorage.getItem("theme") || "auto";
     </script>
     
+
 <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
   <symbol id="svg-toc" viewBox="0 0 24 24">
     <title>Contents</title>
@@ -151,7 +156,6 @@
 <div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
   <ul class="current">
 <li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" role="switch" type="checkbox"/><label for="toctree-checkbox-1"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
 <li class="toctree-l2"><a class="reference internal" href="tutorial/node.html">Node</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tutorial/workflow.html">Workflow</a></li>
@@ -185,7 +189,8 @@
           </svg>
           <span>Back to top</span>
         </a>
-        <div class="content-icon-container"><div class="theme-toggle-container theme-toggle-content">
+        <div class="content-icon-container">
+          <div class="theme-toggle-container theme-toggle-content">
             <button class="theme-toggle">
               <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
               <svg class="theme-icon-when-auto"><use href="#svg-sun-half"></use></svg>
@@ -199,25 +204,42 @@
           </label>
         </div>
         <article role="main">
-          <div class="section" id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">#</a></h1>
-<div class="section" id="nnodes">
-<h2>nnodes<a class="headerlink" href="#nnodes" title="Permalink to this headline">#</a></h2>
-<p>nnodes is a workflow manager.</p>
-</div>
-</div>
+          <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">#</a></h1>
+<section id="nnodes">
+<h2>nnodes<a class="headerlink" href="#nnodes" title="Permalink to this heading">#</a></h2>
+<p>nnodes is a workflow manager that makes your life easier when defining or running complicated jobs either in your local computer or in a large-scale cluster. The basic element of nnodes is called a <code class="docutils literal notranslate"><span class="pre">node</span></code>, which can:</p>
+<ul class="simple">
+<li><p>Call a Python function or run a shell command.</p></li>
+<li><p>Contain any number of child nodes which can be executed either sequentially or concurrently.</p></li>
+<li><p>Be assigned with properties which will be propagated to child nodes.</p></li>
+</ul>
+<p>The execution status each <code class="docutils literal notranslate"><span class="pre">node</span></code> will be saved so that you don’t need to re-run any completed tasks when a job fails or exceeds the scheduled walltime. nnodes can also manage the parallel execution of multiple MPI tasks. Once you define MPI tasks in different nodes, nnodes will figure out the best way to run these.</p>
+</section>
+<section id="why-you-may-need-a-workflow-manager">
+<h2>Why you may need a workflow manager<a class="headerlink" href="#why-you-may-need-a-workflow-manager" title="Permalink to this heading">#</a></h2>
+<p>A workflow manager helps you group, organize and execute operations, which is especially useful for scienfitic problems. Below is an example of an iterative inversion workflow (figure from <a class="reference external" href="https://github.com/lsawade">&#64;lsawade</a>). We want to obtain the parameters of N events. Each event involves a few forward modeling and data processing steps. Without a workflow manager, you might encounter the following problems:</p>
+<ul class="simple">
+<li><p>It’s not always possible to finish the whole workflow within a single run, so progress backup is necessary.</p></li>
+<li><p>Managing parameters for functions can be tedious. Each function may require at least 10 arguments, like event, iteration, step, etc.</p></li>
+<li><p>It’s more effecient to run expensive tasks like forward modeling in parallel, but some clusters don’t like it if you call 1,000 <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code> commands at the same time.</p></li>
+<li><p>You may want to test the workflow in a local computer and do the actual computation in a remote cluster or even many different clusters. This may involve a lot of code changes.</p></li>
+</ul>
+<p>nnodes solves all these problems with ease. See <code class="docutils literal notranslate"><span class="pre">examples/gaussian</span></code> for a detailed explanation.ll figure out the best way to run these.</p>
+</section>
+</section>
 
         </article>
       </div>
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="quickstart.html">
+          <a class="next-page" href="tutorial/index.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Quick Start</div>
+                <div class="title">Tutorial</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -266,6 +288,7 @@
             <ul>
 <li><a class="reference internal" href="#">Introduction</a><ul>
 <li><a class="reference internal" href="#nnodes">nnodes</a></li>
+<li><a class="reference internal" href="#why-you-may-need-a-workflow-manager">Why you may need a workflow manager</a></li>
 </ul>
 </li>
 </ul>
@@ -280,6 +303,7 @@
 </div><script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
+    <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
     <script src="_static/doctools.js"></script>
     <script src="_static/scripts/furo.js"></script>
     </body>
