@@ -123,7 +123,7 @@ class Job:
         from .root import root
 
         if dst is None:
-            # write job script in currect directory
+            # write job script in current directory
             if root.has('job.bash'):
                 raise FileExistsError(f'job.bash already exists')
 

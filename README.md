@@ -41,12 +41,6 @@ Workflow manager is essential for many scientific applications and there is a la
 - **Flexibility**. Nnodes is not tied to a specific scientific problem, and it is decided by the user how deeply they wish to integrate their projects with nnodes. Users can simply use nnodes as a progress controller, or MPI executor, which requires little code change, or they can go so far as to let nnodes manage their entire project.
 - **Portability**. Nnodes currently supports Slurm and LSF systems but also has API for users to define their custom environment. The workflow is saved in a single pickle file that can be transferred to a new system and continue from where it was left off. The MPI executor adapts automatically so no manual configuration is needed to utilize the full cluster resources.
 
-## Cluster support
-Nnodes has no strong connection with any specific job system, when running MPI tasks it just serves as a wrapper for commands like ```mpiexec```, ```srun```, ```jsrun```, etc. So it is easy to add a new cluster configuration with the configuration file. Nnodes has built-in support for:
-- Slurm
-- LSF
-- Local computer with multiprocessing
-
 ## Alternatives
 If you are looking for more options, below are some projects worth checking out:
 
@@ -55,4 +49,4 @@ If you are looking for more options, below are some projects worth checking out:
 - [Workflows Community](https://workflows.community)
 
 ## Contact
-If you have any questions, please submit a ticket or send an [email](mailto:ccui@princeton.edu).
+If you have any questions, please submit a [GitHub issue](https://github.com/icui/nnodes/issues) or send an [email](mailto:ccui@princeton.edu).

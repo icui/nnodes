@@ -1,6 +1,6 @@
 # Install
 
-There are two ways to install nnodes: PYPI and GitHub. The default version of nnodes require Python 3.10 or later, but remains a GitHub branch for older Python versions.
+There are two ways to install nnodes: PYPI and GitHub. The default version of nnodes require Python 3.10 or later, but a GitHub branch for older Python versions is also available.
 
 ## PYPI (Python >= 3.10)
 ```
