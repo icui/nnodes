@@ -54,6 +54,9 @@ exclude_patterns = []
 html_theme = 'furo'
 html_title = 'nnodes'
 
+# modified H2-H4 style for furo theme:
+# <install_dir>/theme/furo/static/styles/furo.css: h2{font-size:1.5em}
+
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".

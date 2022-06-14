@@ -21,8 +21,16 @@ def bin():
     root.init()
 
     # Write submission script to job.bash
-    if len(argv) > 1:
-        root.job.create(argv[1])
+    try:
+        if len(argv) > 1:
+            root.job.create(argv[1])
 
-    else:
-        root.job.create()
+        else:
+            root.job.create()
+    
+    except:
+        create_config()
+
+
+def create_config():
+    pass

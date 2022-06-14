@@ -21,6 +21,9 @@ class Job:
     # submit to debug queue and do not requeue if job fails
     debug: bool = False
 
+    # resubmit if job fails
+    resubmit: bool = True
+
     # avoid calling new MPI tasks if remaining walltime is less than certain minutes
     gap: float = 0.0
 
