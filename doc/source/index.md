@@ -5,7 +5,6 @@
 :hidden:
 
 introduction.md
-quickstart.md
 tutorial/index.md
 reference/index.md
 ```

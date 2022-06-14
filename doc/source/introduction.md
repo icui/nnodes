@@ -19,4 +19,3 @@ A workflow manager helps you group, organize and execute operations, which is es
 
 nnodes solves all these problems with ease. See ```examples/gaussian``` for a detailed explanation.ll figure out the best way to run these.
 
-![Workflow](examples/gaussian/figures/inversion.png)
