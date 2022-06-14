@@ -1,6 +1,6 @@
 # Introduction
 
-To fully understand nnodes, you only need to know two basic concepts: ```Node``` and ```workspace```.
+To know how nnodes works, you only need to understand two concepts: ```Node``` and ```workspace```.
 
 ## Node
 ```Node``` is the basic execution unit of nnodes. Its consists of 4 elements: task, directory, properties and child nodes.

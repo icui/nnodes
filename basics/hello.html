@@ -3,12 +3,12 @@
   <head><meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1"/>
     <meta name="color-scheme" content="light dark"><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
-<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Tutorial" href="../tutorial/index.html" /><link rel="prev" title="Run examples" href="example.html" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Run in HPC clusters" href="cluster.html" /><link rel="prev" title="Run examples" href="example.html" />
 
     <meta name="generator" content="sphinx-5.0.1, furo 2022.06.04.1"/>
         <title>Hello World! - nnodes</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=d825bb20121282ca6aa443402c26c2a6473ce870" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?digest=4e702a2c8615ac642c5a7b549024292682790c45" />
     <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?digest=30d1aed668e5c3a91c3e3bf6a60b675221979f0e" />
     
     
@@ -134,7 +134,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -160,6 +160,7 @@
 <li class="toctree-l2"><a class="reference internal" href="intro.html">Introduction</a></li>
 <li class="toctree-l2"><a class="reference internal" href="example.html">Run examples</a></li>
 <li class="toctree-l2 current current-page"><a class="current reference internal" href="#">Hello World!</a></li>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html">Run in HPC clusters</a></li>
 </ul>
 </li>
 <li class="toctree-l1 has-children"><a class="reference internal" href="../tutorial/index.html">Tutorial</a><input class="toctree-checkbox" id="toctree-checkbox-2" name="toctree-checkbox-2" role="switch" type="checkbox"/><label for="toctree-checkbox-2"><div class="visually-hidden">Toggle child pages in navigation</div><i class="icon"><svg><use href="#svg-arrow-right"></use></svg></i></label><ul>
@@ -204,7 +205,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -212,13 +213,89 @@
         <article role="main">
           <section id="hello-world">
 <h1>Hello World!<a class="headerlink" href="#hello-world" title="Permalink to this heading">#</a></h1>
-<p>A basic element of nnodes is called a <code class="docutils literal notranslate"><span class="pre">node</span></code>. A <code class="docutils literal notranslate"><span class="pre">node</span></code> can</p>
-<ul class="simple">
-<li><p>Points to a certain directory.</p></li>
-<li><p>Call a Python function or a Shell command.</p></li>
-<li><p>Contain any number of child nodes that can be executed either sequantially or concurrently.</p></li>
-<li><p>Be defined with properties that will be propagated to child nodes.</p></li>
-</ul>
+<p>In this section, you will create two files: <a class="reference external" href="https://raw.githubusercontent.com/icui/nnodes/main/examples/hello/config.toml"><code class="docutils literal notranslate"><span class="pre">config.toml</span></code></a> and <a class="reference external" href="https://raw.githubusercontent.com/icui/nnodes/main/examples/hello/hello.py"><code class="docutils literal notranslate"><span class="pre">hello.py</span></code></a>. The structure of the workflow is shown below.</p>
+<p><img alt="Workflow" src="../_images/hello.png" /></p>
+<section id="create-config-toml">
+<h2>Create config.toml<a class="headerlink" href="#create-config-toml" title="Permalink to this heading">#</a></h2>
+<p>Use <code class="docutils literal notranslate"><span class="pre">nnmk</span></code> as mentioned in introduction.</p>
+<p>Enter <code class="docutils literal notranslate"><span class="pre">3</span></code> (personal computer) in system selection.<br>
+Enter <code class="docutils literal notranslate"><span class="pre">hello</span></code> when prompt <code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">containing</span> <span class="pre">the</span> <span class="pre">main</span> <span class="pre">task</span></code>.<br>
+Enter <code class="docutils literal notranslate"><span class="pre">main</span></code> when prompt <code class="docutils literal notranslate"><span class="pre">function</span> <span class="pre">name</span> <span class="pre">of</span> <span class="pre">the</span> <span class="pre">main</span> <span class="pre">task</span></code>.</p>
+</section>
+<section id="print-hello-world">
+<h2>Print “Hello World!”<a class="headerlink" href="#print-hello-world" title="Permalink to this heading">#</a></h2>
+<p>We have chose function <code class="docutils literal notranslate"><span class="pre">main</span></code> in <code class="docutils literal notranslate"><span class="pre">hello.py</span></code> as our main task. We can create the file and write a function:</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># hello.py</span>
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>A task function by default accepts its <code class="docutils literal notranslate"><span class="pre">Node</span></code> as its only argument. In this case, the <code class="docutils literal notranslate"><span class="pre">node</span></code> passed to <code class="docutils literal notranslate"><span class="pre">main</span></code> is the top level <code class="docutils literal notranslate"><span class="pre">root</span></code> node. After creating the file, type <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-f</span> <span class="pre">root.pickle</span> <span class="pre">&amp;&amp;</span> <span class="pre">nnrun</span></code>, you will see the output (<code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-f</span> <span class="pre">root.pickle</span></code> clears the progress of the previous nnrun).</p>
+</section>
+<section id="add-child-tasks">
+<h2>Add child tasks<a class="headerlink" href="#add-child-tasks" title="Permalink to this heading">#</a></h2>
+<p>In a task function, you can add a child node with either a function or a shell command as its task.</p>
+<p>Add a child node with a function</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_func</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">task_func</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Hello from func!&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Add a child node with a shell command</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;Hello from echo!&quot;&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="add-child-tasks-with-properties">
+<h2>Add child tasks with properties<a class="headerlink" href="#add-child-tasks-with-properties" title="Permalink to this heading">#</a></h2>
+<p>Properties are define in keyword arguments in <code class="docutils literal notranslate"><span class="pre">Node.add()</span></code>.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Sunday.</span>
+<span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Monday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Monday.</span>
+<span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Tuesday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Tuesday.</span>
+
+<span class="k">def</span> <span class="nf">print_today</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Today is </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">day</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Properties will be propagated to child nodes, unless overwritten.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_sunday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">task_sunday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">)</span>  <span class="c1"># Today is Sunday.</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;the day before Monday&#39;</span><span class="p">)</span>  <span class="c1"># Today is the day before Monday.</span>
+</pre></div>
+</div>
+</section>
+<section id="parallel-tasks">
+<h2>Parallel tasks<a class="headerlink" href="#parallel-tasks" title="Permalink to this heading">#</a></h2>
+<p>You can execute all child tasks concurrently by setting the property <code class="docutils literal notranslate"><span class="pre">concurrent</span></code>. These tasks should either be <a class="reference external" href="https://docs.python.org/3/library/asyncio-task.html#awaitables">async functions</a> or background tasks (MPI or background process). The following example contains 3 tasks with execution time 1s, 2s and 3s. But the total execution time is 3s because these tasks are executed in parallel.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_monday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Monday&#39;</span><span class="p">,</span> <span class="n">concurrent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">task_monday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_morning</span><span class="p">)</span>  <span class="c1"># add an async function that lasts 1s</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 2 &amp;&amp; echo &quot;Good afternoon.&quot;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># add a mpi task with 1 CPU that lasts 2s</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 3 &amp;&amp; echo &quot;Good evening.&quot;&#39;</span><span class="p">,</span> <span class="n">use_multiprocessing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># add a background process that lasts 3s</span>
+
+<span class="k">async</span> <span class="k">def</span> <span class="nf">print_morning</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">sleep</span>
+    <span class="k">await</span> <span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Good morning&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="directory-utilities">
+<h2>Directory utilities<a class="headerlink" href="#directory-utilities" title="Permalink to this heading">#</a></h2>
+<p>Node offers <a class="reference external" href="https://icui.github.io/nnodes/reference/directory.html">file system utilities</a> like <code class="docutils literal notranslate"><span class="pre">cp</span></code>, <code class="docutils literal notranslate"><span class="pre">mv</span></code>, <code class="docutils literal notranslate"><span class="pre">read</span></code>, <code class="docutils literal notranslate"><span class="pre">write</span></code>. By default, child tasks use the same directory as its parent, but can be changed by passing a <code class="docutils literal notranslate"><span class="pre">cwd</span></code> parameter.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_tuesday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Tuesday&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="s1">&#39;tue&#39;</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">task_tuesday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">)</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="s1">&#39;today.txt&#39;</span><span class="p">)</span>  <span class="c1"># writes today.txt in ./tue</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;noon&quot; &gt; time.txt&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="s1">&#39;noon&#39;</span><span class="p">)</span>  <span class="c1"># writes time.txt in ./tue/noon</span>
+</pre></div>
+</div>
+</section>
 </section>
 
         </article>
@@ -226,12 +303,12 @@
       <footer>
         
         <div class="related-pages">
-          <a class="next-page" href="../tutorial/index.html">
+          <a class="next-page" href="cluster.html">
               <div class="page-info">
                 <div class="context">
                   <span>Next</span>
                 </div>
-                <div class="title">Tutorial</div>
+                <div class="title">Run in HPC clusters</div>
               </div>
               <svg><use href="#svg-arrow-right"></use></svg>
             </a>
@@ -266,8 +343,32 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Hello World!</a><ul>
+<li><a class="reference internal" href="#create-config-toml">Create config.toml</a></li>
+<li><a class="reference internal" href="#print-hello-world">Print “Hello World!”</a></li>
+<li><a class="reference internal" href="#add-child-tasks">Add child tasks</a></li>
+<li><a class="reference internal" href="#add-child-tasks-with-properties">Add child tasks with properties</a></li>
+<li><a class="reference internal" href="#parallel-tasks">Parallel tasks</a></li>
+<li><a class="reference internal" href="#directory-utilities">Directory utilities</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>
