@@ -253,15 +253,6 @@ Inspired by HTML document, nnodes introduces a hierarchical parameter system tha
 <li><p><strong>Portability</strong>. Nnodes currently supports Slurm and LSF systems but also has API for users to define their custom environment. The workflow is saved in a single pickle file that can be transferred to a new system and continue from where it was left off. The MPI executor adapts automatically so no manual configuration is needed to utilize the full cluster resources.</p></li>
 </ul>
 </section>
-<section id="cluster-support">
-<h2>Cluster support<a class="headerlink" href="#cluster-support" title="Permalink to this heading">#</a></h2>
-<p>Nnodes has no strong connection with any specific job system, when running MPI tasks it just serves as a wrapper for commands like <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code>, <code class="docutils literal notranslate"><span class="pre">srun</span></code>, <code class="docutils literal notranslate"><span class="pre">jsrun</span></code>, etc. So it is easy to add a new cluster configuration with the configuration file. Nnodes has built-in support for:</p>
-<ul class="simple">
-<li><p>Slurm</p></li>
-<li><p>LSF</p></li>
-<li><p>Local computer with multiprocessing</p></li>
-</ul>
-</section>
 <section id="alternatives">
 <h2>Alternatives<a class="headerlink" href="#alternatives" title="Permalink to this heading">#</a></h2>
 <p>If you are looking for more options, below are some projects worth checking out:</p>
@@ -273,7 +264,7 @@ Inspired by HTML document, nnodes introduces a hierarchical parameter system tha
 </section>
 <section id="contact">
 <h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading">#</a></h2>
-<p>If you have any questions, please submit a ticket or send an <a class="reference external" href="mailto:ccui&#37;&#52;&#48;princeton&#46;edu">email</a>.</p>
+<p>If you have any questions, please submit a <a class="reference external" href="https://github.com/icui/nnodes/issues">GitHub issue</a> or send an <a class="reference external" href="mailto:ccui&#37;&#52;&#48;princeton&#46;edu">email</a>.</p>
 <div class="toctree-wrapper compound">
 </div>
 </section>
@@ -330,7 +321,6 @@ Inspired by HTML document, nnodes introduces a hierarchical parameter system tha
 <li><a class="reference internal" href="#quick-start">Quick start</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
 <li><a class="reference internal" href="#why-nnodes">Why nnodes?</a></li>
-<li><a class="reference internal" href="#cluster-support">Cluster support</a></li>
 <li><a class="reference internal" href="#alternatives">Alternatives</a></li>
 <li><a class="reference internal" href="#contact">Contact</a></li>
 </ul>

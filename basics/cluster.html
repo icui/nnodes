@@ -134,7 +134,7 @@
           <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
         </button>
       </div>
-      <label class="toc-overlay-icon toc-header-icon no-toc" for="__toc">
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
         <div class="visually-hidden">Toggle table of contents sidebar</div>
         <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
       </label>
@@ -205,7 +205,7 @@
               <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
             </button>
           </div>
-          <label class="toc-overlay-icon toc-content-icon no-toc" for="__toc">
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
             <div class="visually-hidden">Toggle table of contents sidebar</div>
             <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
           </label>
@@ -215,6 +215,15 @@
 <h1>Run in HPC clusters<a class="headerlink" href="#run-in-hpc-clusters" title="Permalink to this heading">#</a></h1>
 <p>In supported clusters (currently Slurm and LSF), <code class="docutils literal notranslate"><span class="pre">nnmk</span></code> will also create a <code class="docutils literal notranslate"><span class="pre">job.bash</span></code> file. You can directly submit job.bash to the scheduler.</p>
 <p>Cluster jobs also require a <code class="docutils literal notranslate"><span class="pre">walltime</span></code> property. If a job lasts longer than its requested walltime, nnodes will save and resubmit. You can disable auto resubmission by adding a property <code class="docutils literal notranslate"><span class="pre">resubmit</span> <span class="pre">=</span> <span class="pre">False</span></code>.</p>
+<section id="cluster-support">
+<h2>Cluster support<a class="headerlink" href="#cluster-support" title="Permalink to this heading">#</a></h2>
+<p>Nnodes has no strong connection with any specific job system, when running MPI tasks it just serves as a wrapper for commands like <code class="docutils literal notranslate"><span class="pre">mpiexec</span></code>, <code class="docutils literal notranslate"><span class="pre">srun</span></code>, <code class="docutils literal notranslate"><span class="pre">jsrun</span></code>, etc. So it is easy to add a new cluster configuration with the configuration file. Nnodes has built-in support for:</p>
+<ul class="simple">
+<li><p>Slurm</p></li>
+<li><p>LSF</p></li>
+<li><p>Local computer with multiprocessing</p></li>
+</ul>
+</section>
 </section>
 
         </article>
@@ -262,8 +271,27 @@
         
       </footer>
     </div>
-    <aside class="toc-drawer no-toc">
+    <aside class="toc-drawer">
       
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            Contents
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Run in HPC clusters</a><ul>
+<li><a class="reference internal" href="#cluster-support">Cluster support</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
       
       
     </aside>

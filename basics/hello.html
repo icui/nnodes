@@ -224,45 +224,58 @@ Enter <code class="docutils literal notranslate"><span class="pre">main</span></
 </section>
 <section id="print-hello-world">
 <h2>Print “Hello World!”<a class="headerlink" href="#print-hello-world" title="Permalink to this heading">#</a></h2>
-<p>We have chose function <code class="docutils literal notranslate"><span class="pre">main</span></code> in <code class="docutils literal notranslate"><span class="pre">hello.py</span></code> as our main task. We can create the file and write a function:</p>
+<p>We have chose function <code class="docutils literal notranslate"><span class="pre">main</span></code> in <code class="docutils literal notranslate"><span class="pre">hello.py</span></code> as our main task. Let’s define the function first.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="c1"># hello.py</span>
 <span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Entry point of the workflow, which is defined in config.toml.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Hello World!&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>A task function by default accepts its <code class="docutils literal notranslate"><span class="pre">Node</span></code> as its only argument. In this case, the <code class="docutils literal notranslate"><span class="pre">node</span></code> passed to <code class="docutils literal notranslate"><span class="pre">main</span></code> is the top level <code class="docutils literal notranslate"><span class="pre">root</span></code> node. After creating the file, type <code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-f</span> <span class="pre">root.pickle</span> <span class="pre">&amp;&amp;</span> <span class="pre">nnrun</span></code>, you will see the output (<code class="docutils literal notranslate"><span class="pre">rm</span> <span class="pre">-f</span> <span class="pre">root.pickle</span></code> clears the progress of the previous nnrun).</p>
+<p>A task function by default accepts its <code class="docutils literal notranslate"><span class="pre">Node</span></code> as its only argument. In this case, the <code class="docutils literal notranslate"><span class="pre">node</span></code> passed to <code class="docutils literal notranslate"><span class="pre">main</span></code> is the top level <code class="docutils literal notranslate"><span class="pre">root</span></code> node. After creating the file, enter <code class="docutils literal notranslate"><span class="pre">nnrun</span></code> and you will see the output.</p>
 </section>
 <section id="add-child-tasks">
 <h2>Add child tasks<a class="headerlink" href="#add-child-tasks" title="Permalink to this heading">#</a></h2>
 <p>In a task function, you can add a child node with either a function or a shell command as its task.</p>
 <p>Add a child node with a function</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_func</span><span class="p">)</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="c1"># add a child node with a Python function as its task</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_func</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">task_func</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A child task of the main node, will be executed after main().&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Hello from func!&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Add a child node with a shell command</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;Hello from echo!&quot;&#39;</span><span class="p">)</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="c1"># add a child node with a Shell command as its task</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;Hello from echo!&quot;&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
 <section id="add-child-tasks-with-properties">
 <h2>Add child tasks with properties<a class="headerlink" href="#add-child-tasks-with-properties" title="Permalink to this heading">#</a></h2>
 <p>Properties are define in keyword arguments in <code class="docutils literal notranslate"><span class="pre">Node.add()</span></code>.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Sunday.</span>
-<span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Monday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Monday.</span>
-<span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Tuesday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Tuesday.</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="c1"># add child nodes with a Python function as its task, with properties defined</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Sunday.</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Monday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Monday.</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Tuesday&#39;</span><span class="p">)</span>  <span class="c1"># Today is Tuesday.</span>
 
 <span class="k">def</span> <span class="nf">print_today</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A task function printing its property.&quot;&quot;&quot;</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Today is </span><span class="si">{</span><span class="n">node</span><span class="o">.</span><span class="n">day</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Properties will be propagated to child nodes, unless overwritten.</p>
-<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_sunday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_sunday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Sunday&#39;</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">task_sunday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
+    <span class="c1"># add a chlid node inheriting its property</span>
     <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">)</span>  <span class="c1"># Today is Sunday.</span>
+
+    <span class="c1"># add a chlid node that overwrites its property</span>
     <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;the day before Monday&#39;</span><span class="p">)</span>  <span class="c1"># Today is the day before Monday.</span>
 </pre></div>
 </div>
@@ -270,12 +283,18 @@ Enter <code class="docutils literal notranslate"><span class="pre">main</span></
 <section id="parallel-tasks">
 <h2>Parallel tasks<a class="headerlink" href="#parallel-tasks" title="Permalink to this heading">#</a></h2>
 <p>You can execute all child tasks concurrently by setting the property <code class="docutils literal notranslate"><span class="pre">concurrent</span></code>. These tasks should either be <a class="reference external" href="https://docs.python.org/3/library/asyncio-task.html#awaitables">async functions</a> or background tasks (MPI or background process). The following example contains 3 tasks with execution time 1s, 2s and 3s. But the total execution time is 3s because these tasks are executed in parallel.</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">asyncio.sleep</span></code> is not <code class="docutils literal notranslate"><span class="pre">time.sleep</span></code>, it terminates the current function but the main thread will continue running, going to the next task directly (print “Good afternoon.”). This is also not multithreading, the main process is still single-threaded. To learn more, reference to <a class="reference external" href="https://docs.python.org/3/library/asyncio.html">asyncio module</a>.</p>
 <div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">task_monday</span><span class="p">,</span> <span class="n">day</span><span class="o">=</span><span class="s1">&#39;Monday&#39;</span><span class="p">,</span> <span class="n">concurrent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">task_monday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_morning</span><span class="p">)</span>  <span class="c1"># add an async function that lasts 1s</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 2 &amp;&amp; echo &quot;Good afternoon.&quot;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># add a mpi task with 1 CPU that lasts 2s</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 3 &amp;&amp; echo &quot;Good evening.&quot;&#39;</span><span class="p">,</span> <span class="n">use_multiprocessing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># add a background process that lasts 3s</span>
+    <span class="c1"># add an async function that lasts 1s</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_morning</span><span class="p">)</span> 
+
+     <span class="c1"># add a mpi task with 1 CPU that lasts 2s</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 2 &amp;&amp; echo &quot;Good afternoon.&quot;&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># add a subprocess that lasts 3s</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add_mpi</span><span class="p">(</span><span class="s1">&#39;sleep 3 &amp;&amp; echo &quot;Good evening.&quot;&#39;</span><span class="p">,</span> <span class="n">use_multiprocessing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <span class="k">async</span> <span class="k">def</span> <span class="nf">print_morning</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
     <span class="kn">from</span> <span class="nn">asyncio</span> <span class="kn">import</span> <span class="n">sleep</span>
@@ -291,10 +310,29 @@ Enter <code class="docutils literal notranslate"><span class="pre">main</span></
 
 <span class="k">def</span> <span class="nf">task_tuesday</span><span class="p">(</span><span class="n">node</span><span class="p">):</span>
     <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">print_today</span><span class="p">)</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="s1">&#39;today.txt&#39;</span><span class="p">)</span>  <span class="c1"># writes today.txt in ./tue</span>
-    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;noon&quot; &gt; time.txt&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="s1">&#39;noon&#39;</span><span class="p">)</span>  <span class="c1"># writes time.txt in ./tue/noon</span>
+
+    <span class="c1"># writes today.txt in ./tue</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">day</span><span class="p">,</span> <span class="s1">&#39;today.txt&#39;</span><span class="p">)</span>
+
+    <span class="c1"># writes time.txt in ./tue/noon</span>
+    <span class="n">node</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;echo &quot;noon&quot; &gt; time.txt&#39;</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="s1">&#39;noon&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+</section>
+<section id="understanding-root-pickle">
+<h2>Understanding root.pickle<a class="headerlink" href="#understanding-root-pickle" title="Permalink to this heading">#</a></h2>
+<p>During execution, a <code class="docutils literal notranslate"><span class="pre">root.pickle</span></code> file will be generated. You can check its content through command <code class="docutils literal notranslate"><span class="pre">nnlog</span></code>. To re-run a workflow, you need to delete the <code class="docutils literal notranslate"><span class="pre">root.pickle</span></code> file because <code class="docutils literal notranslate"><span class="pre">root.pickle</span></code> tells nnodes that the workflow is already finished.</p>
+<p>You can also directly modify <code class="docutils literal notranslate"><span class="pre">root.pickle</span></code>. Assuming you have downloaded the complete <a class="reference external" href="https://raw.githubusercontent.com/icui/nnodes/main/examples/hello/hello.py"><code class="docutils literal notranslate"><span class="pre">hello.py</span></code></a> file and already executed it with <code class="docutils literal notranslate"><span class="pre">nnrun</span></code>, you can re-run specific node through a Python interface.</p>
+<div class="highlight-py notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">nnodes</span> <span class="kn">import</span> <span class="n">root</span>
+
+<span class="c1"># reads workflow status from root.pickle</span>
+<span class="n">root</span><span class="o">.</span><span class="n">init</span><span class="p">()</span>
+
+<span class="c1"># reset the status of the first child node of root (task_hello)</span>
+<span class="n">root</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>After this, if you enter <code class="docutils literal notranslate"><span class="pre">nnrun</span></code> again, only the first task of the root node (which is function <code class="docutils literal notranslate"><span class="pre">task_hello</span></code>) will be executed.</p>
 </section>
 </section>
 
@@ -362,6 +400,7 @@ Enter <code class="docutils literal notranslate"><span class="pre">main</span></
 <li><a class="reference internal" href="#add-child-tasks-with-properties">Add child tasks with properties</a></li>
 <li><a class="reference internal" href="#parallel-tasks">Parallel tasks</a></li>
 <li><a class="reference internal" href="#directory-utilities">Directory utilities</a></li>
+<li><a class="reference internal" href="#understanding-root-pickle">Understanding root.pickle</a></li>
 </ul>
 </li>
 </ul>
