@@ -38,7 +38,7 @@ class Directory:
         src = path.normpath(path.join(self.cwd, *paths))
         return path.abspath(src) if abs else src
     
-    def rel(self, src: tp.Union[str, Directory], *paths: str) -> str:
+    def rel(self, src: str | Directory, *paths: str) -> str:
         """Convert from a path relative to root directory to a path relative to current directory.
 
         Args:
@@ -162,7 +162,7 @@ class Directory:
         """
         check_call('mkdir -p ' + self.path(dst), shell=True)
     
-    def ls(self, src: str = '.', grep: str = '*', isdir: tp.Optional[bool] = None) -> tp.List[str]:
+    def ls(self, src: str = '.', grep: str = '*', isdir: bool | None = None) -> tp.List[str]:
         """List items in a directory.
 
         Args:
