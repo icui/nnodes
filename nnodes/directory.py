@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from os import path, fsync
 from subprocess import check_call
 from glob import glob
@@ -9,23 +7,23 @@ import typing as tp
 
 
 # supported types for directory.load() and directory.dump()
-DumpType = tp.Literal['pickle', 'npy', 'toml', 'json', None]
+DumpType = tp.Any
 
 
 class Directory:
     """Directory related operations."""
     # relative path
-    _cwd: str
+    #_cwd: str
 
     @property
-    def cwd(self) -> str:
+    def cwd(self)       :
         """str: Path of the directory."""
         return self._cwd
     
-    def __init__(self, cwd: str):
+    def __init__(self, cwd     ):
         self._cwd = cwd
     
-    def path(self, *paths: str, abs: bool = False) -> str:
+    def path(self, *paths     , abs       = False)       :
         """Get relative or absolute path of current or a sub directory.
 
         Args:
@@ -38,7 +36,7 @@ class Directory:
         src = path.normpath(path.join(self.cwd, *paths))
         return path.abspath(src) if abs else src
     
-    def rel(self, src: str | Directory, *paths: str) -> str:
+    def rel(self, src                 , *paths     )       :
         """Convert from a path relative to root directory to a path relative to current directory.
 
         Args:
@@ -60,7 +58,7 @@ class Directory:
             
         return path.relpath(src or '.', self.path())
     
-    def subdir(self, *paths: str) -> Directory:
+    def subdir(self, *paths     )             :
         """Create a subdirectory object.
 
         Args:
@@ -71,7 +69,7 @@ class Directory:
         """
         return Directory(self.path(*paths))
     
-    def has(self, src: str = '.') -> bool:
+    def has(self, src      = '.')        :
         """Check if a file or a directory exists.
 
         Args:
@@ -82,7 +80,7 @@ class Directory:
         """
         return path.exists(self.path(src))
     
-    def rm(self, src: str = '.'):
+    def rm(self, src      = '.'):
         """Remove a file or a directory.
 
         Args:
@@ -90,7 +88,7 @@ class Directory:
         """
         check_call('rm -rf ' + self.path(src), shell=True)
     
-    def cp(self, src: str, dst: str = '.', *, mkdir: bool = True):
+    def cp(self, src     , dst      = '.', *, mkdir       = True):
         """Copy file or a directory.
 
         Args:
@@ -103,7 +101,7 @@ class Directory:
 
         check_call(f'cp -r {self.path(src)} {self.path(dst)}', shell=True)
     
-    def mv(self, src: str, dst: str = '.', *, mkdir: bool = True):
+    def mv(self, src     , dst      = '.', *, mkdir       = True):
         """Move a file or a directory.
 
         Args:
@@ -116,7 +114,7 @@ class Directory:
 
         check_call(f'mv {self.path(src)} {self.path(dst)}', shell=True)
     
-    def ln(self, src: str, dst: str = '.', mkdir: bool = True):
+    def ln(self, src     , dst      = '.', mkdir       = True):
         """Link a file or a directory.
 
         Args:
@@ -154,7 +152,7 @@ class Directory:
 
         check_call(f'ln -s {src} {dstf}', shell=True, cwd=self.path(dstdir))
     
-    def mkdir(self, dst: str = '.'):
+    def mkdir(self, dst      = '.'):
         """Create a new directory recursively.
 
         Args:
@@ -162,7 +160,7 @@ class Directory:
         """
         check_call('mkdir -p ' + self.path(dst), shell=True)
     
-    def ls(self, src: str = '.', grep: str = '*', isdir: bool | None = None) -> tp.List[str]:
+    def ls(self, src      = '.', grep      = '*', isdir              = None)                :
         """List items in a directory.
 
         Args:
@@ -174,7 +172,7 @@ class Directory:
         Returns:
             tp.List[str]: Items in the directory.
         """
-        entries: tp.List[str] = []
+        entries               = []
 
         for entry in glob(self.path(path.join(src, grep))):
             # skip non-directory entries
@@ -189,7 +187,7 @@ class Directory:
 
         return entries
     
-    def isdir(self, src: str = '.') -> bool:
+    def isdir(self, src      = '.')        :
         """Check if src is a directory.
 
         Args:
@@ -200,7 +198,7 @@ class Directory:
         """
         return path.isdir(self.path(src))
 
-    def read(self, src: str) -> str:
+    def read(self, src     )       :
         """Read text file.
 
         Args:
@@ -212,7 +210,7 @@ class Directory:
         with open(self.path(src), 'r', errors='ignore') as f:
             return f.read()
 
-    def write(self, text: str, dst: str, mode: str = 'w', *, mkdir: bool = True):
+    def write(self, text     , dst     , mode      = 'w', *, mkdir       = True):
         """Write a text file.
 
         Args:
@@ -229,7 +227,7 @@ class Directory:
             f.flush()
             fsync(f.fileno())
     
-    def readlines(self, src: str) -> tp.List[str]:
+    def readlines(self, src     )                :
         """Read lines of a text file.
 
         Args:
@@ -240,7 +238,7 @@ class Directory:
         """
         return self.read(src).split('\n')
     
-    def writelines(self, lines: tp.Iterable[str], dst: str, mode: str = 'w', *, mkdir: bool = True):
+    def writelines(self, lines                  , dst     , mode      = 'w', *, mkdir       = True):
         """Write lines of a text file.
 
         Args:
@@ -254,7 +252,7 @@ class Directory:
 
         self.write('\n'.join(lines), dst, mode)
     
-    def call(self, cmd: str):
+    def call(self, cmd     ):
         """Call a shell command.
 
         Args:
@@ -262,7 +260,7 @@ class Directory:
         """
         check_call(cmd, cwd=self.cwd, shell=True)
     
-    async def call_async(self, cmd: str):
+    async def call_async(self, cmd     ):
         """Call a shell command asynchronously.
 
         Args:
@@ -272,7 +270,7 @@ class Directory:
         process = await create_subprocess_shell(cmd, cwd=self.cwd)
         await process.communicate()
     
-    def load(self, src: str, ext: DumpType = None) -> tp.Any:
+    def load(self, src     , ext           = None)          :
         """Load a pickle / toml / json / npy file.
 
         Args:
@@ -308,7 +306,7 @@ class Directory:
         else:
             raise TypeError(f'unsupported file type {ext}')
     
-    def dump(self, obj, dst: str, ext: DumpType = None, *, mkdir: bool = True):
+    def dump(self, obj, dst     , ext           = None, *, mkdir       = True):
         """Dump a pickle / toml / json / npy file.
 
         Args:

@@ -7,34 +7,34 @@ from subprocess import check_call
 class Job:
     """Base class for clusters."""
     # job name
-    name: str | None = None
+    name             = None
 
     # number of nodes to request
-    nnodes: int
+    #nnodes: int
 
     # account to submit the job
-    account: str | None = None
+    account             = None
 
     # amount of walltime to request
-    walltime: float
+    #walltime: float
 
     # submit to debug queue and do not requeue if job fails
-    debug: bool = False
+    debug       = False
 
     # resubmit if job fails
-    auto_requeue: bool = True
+    auto_requeue       = True
 
     # no walltime and nnodes options
     no_scheduler = False
 
     # avoid calling new MPI tasks if remaining walltime is less than certain minutes
-    gap: float = 0.0
+    gap        = 0.0
 
     # number of CPUs per node (if is None, the value must exist in config.toml)
-    cpus_per_node: int
+    #cpus_per_node: int
 
     # number of GPUs per node (if is None, the value must exist in config.toml)
-    gpus_per_node: int
+    #gpus_per_node: int
 
     # whether a node can run multiple MPI tasks
     node_splittable = False
@@ -43,16 +43,16 @@ class Job:
     use_multiprocessing = False
 
     # maximum number of processes spawned with multiprocessing
-    mp_nprocs_max: int = 20
+    mp_nprocs_max      = 20
 
     # execution start time
-    _exec_start: float
+    #_exec_start: float
 
     # job is being requeued
     _signaled = False
 
     # job state
-    _state: tp.List[bool]
+    #_state: tp.List[bool]
 
     @property
     def paused(self):
@@ -60,7 +60,7 @@ class Job:
         return self._state[0]
     
     @paused.setter
-    def paused(self, key: bool):
+    def paused(self, key      ):
         self._state[0] = key
 
     @property
@@ -69,7 +69,7 @@ class Job:
         return self._state[1]
     
     @failed.setter
-    def failed(self, key: bool):
+    def failed(self, key      ):
         self._state[1] = key
 
     @property
@@ -78,20 +78,20 @@ class Job:
         return self._state[2]
     
     @aborted.setter
-    def aborted(self, key: bool):
+    def aborted(self, key      ):
         self._state[2] = key
 
     @property
-    def inqueue(self) -> bool:
+    def inqueue(self)        :
         """Job is allocated from scheduler (enables automatic requeue and mpiexec timeout)."""
         return False
     
     @property
-    def remaining(self) -> float:
+    def remaining(self)         :
         """Remaining walltime in minutes."""
         return self.walltime - self.gap - (time() - self._exec_start) / 60
 
-    def write(self, cmd: str, dst: str):
+    def write(self, cmd     , dst     ):
         """Write job submission script to target directory."""
         from  .root import root
 
@@ -100,11 +100,11 @@ class Job:
     def requeue(self):
         """Resubmit current job."""
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None) -> str:
+    def mpiexec(self, cmd     , nprocs     , cpus_per_proc      = 1, gpus_per_proc      = 0, mps             = None)       :
         """Run a MPI task."""
         raise NotImplementedError(f'mpiexec is not implemented ({cmd})')
 
-    def __init__(self, job: dict, state: list):
+    def __init__(self, job      , state      ):
         # job state (paused, failed, aborted)
         self._state = state
 
@@ -121,7 +121,7 @@ class Job:
         # execution start time
         self._exec_start = time()
 
-    def create(self, dst: str | None = None):
+    def create(self, dst             = None):
         """Creates a directory as job workspace."""
         from .root import root
 
@@ -197,7 +197,7 @@ class LSF(Job):
         """Run current job again."""
         check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+    def mpiexec(self, cmd     , nprocs     , cpus_per_proc      = 1, gpus_per_proc      = 0, mps             = None):
         """Get the command to call MPI."""
         jsrun = 'jsrun'
 
@@ -238,7 +238,7 @@ class Slurm(Job):
         """Run current job again."""
         check_call('scontrol requeue ' + environ['SLURM_JOB_ID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+    def mpiexec(self, cmd     , nprocs     , cpus_per_proc      = 1, gpus_per_proc      = 0, mps             = None):
         """Get the command to call MPI."""
         return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
 
@@ -345,6 +345,6 @@ class LocalMPI(Local):
 
     use_multiprocessing = False
 
-    def mpiexec(self, cmd: str, nprocs: int, *_):
+    def mpiexec(self, cmd     , nprocs     , *_):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'

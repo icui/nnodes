@@ -1,4 +1,3 @@
-from __future__ import annotations
 import asyncio
 import typing as tp
 from math import ceil
@@ -12,15 +11,16 @@ from .directory import Directory
 
 
 # pending tasks (Fraction for MPI tasks, int for multiprocessing tasks)
-_pending: tp.Dict[asyncio.Lock, Fraction | int] = {}
+_pending                                        = {}
 
 # running tasks (Fraction for MPI tasks, int for multiprocessing tasks)
-_running: tp.Dict[asyncio.Lock, Fraction | int] = {}
+_running                                        = {}
 
 
-def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
+def _dispatch(lock              , nnodes                )        :
     """Execute a task if resource is available."""
-    ntotal = root.job.mp_nprocs_max if (mp := isinstance(nnodes, int)) else root.job.nnodes
+    mp = isinstance(nnodes, int)
+    ntotal = root.job.mp_nprocs_max if mp else root.job.nnodes
     nrunning = sum(v for v in _running.values() if isinstance(v, int) == mp)
 
     if nrunning == 0 or nnodes <= ntotal - nrunning:
@@ -30,7 +30,7 @@ def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
     return False
 
 
-def splitargs(mpiarg: list | tuple, nprocs: int) -> list:
+def splitargs(mpiarg              , nprocs     )        :
     """Split arguments to n processes."""
     # assign a chunk of arg_mpi to each processor
     mpiarg = sorted(mpiarg)
@@ -45,12 +45,12 @@ def splitargs(mpiarg: list | tuple, nprocs: int) -> list:
     return args
 
 
-async def mpiexec(cmd: Task,
-    nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
-    mps: int | None, fname: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
-    group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
-    timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
-    d: Directory) -> str:
+async def mpiexec(cmd      ,
+    nprocs                                     , cpus_per_proc     , gpus_per_proc     ,
+    mps            , fname            , args                     , mpiarg                     ,
+    group_mpiarg      , check_output                               , use_multiprocessing             ,
+    timeout                                   , ontimeout                                                    ,
+    d           )       :
     """Schedule the execution of MPI task."""
     # task queue controller
     lock = asyncio.Lock()

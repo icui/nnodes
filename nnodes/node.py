@@ -1,4 +1,3 @@
-from __future__ import annotations
 from os import path
 from sys import stderr
 from time import time
@@ -12,7 +11,7 @@ import typing as tp
 from .directory import Directory
 
 
-def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
+def parse_import(path                                   )          :
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
         target = import_module(path[0])
@@ -25,12 +24,12 @@ def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
     return path
 
 
-def getnargs(func: tp.Callable) -> int:
+def getnargs(func             )       :
     """Get the number of arguments required by a function."""
     return len(signature(func).parameters)
 
 
-def getname(task: Task) -> str | None:
+def getname(task      )              :
     """Get default task name."""
     if isinstance(task, (list, tuple)):
         return task[-1]
@@ -49,73 +48,74 @@ def getname(task: Task) -> str | None:
 N = tp.TypeVar('N', bound='Node')
 
 # type for a node task
-Task = tp.Callable | tp.List[str] | tp.Tuple[str, ...] | str
+Task = tp.Any
 
 
 class Node(Directory, tp.Generic[N]):
     """A directory with a task."""
     # node task
-    task: Task | None
+    #task: Task | None
 
     # task progress prober
-    prober: tp.Callable[..., float | str | None] | None
+    #prober: tp.Callable[..., float | str | None] | None
 
     # whether child nodes are executed concurrently
-    concurrent: bool | None
+    #concurrent: bool | None
 
     # arguments passed to task (pass Node if args is None)
-    args: tp.Iterable | None
+    #args: tp.Iterable | None
 
     # display name
-    _name: str | None = None
+    _name             = None
 
     # initial data passed to self.__init__
-    _init: dict
+    #_init: dict
 
     # data modified by self.task
-    _data: dict
+    #_data: dict
 
     # parent node
-    _parent: N | None
+    #_parent: N | None
 
     # time when task started
-    _starttime: float | None = None
+    _starttime               = None
 
     # time when MPI task started
-    _dispatchtime: float | None = None
+    _dispatchtime               = None
 
     # time when task ended
-    _endtime: float | None = None
+    _endtime               = None
 
     # task is added from node.add_mpi()
-    _is_mpi: bool = False
+    _is_mpi       = False
 
     # exception raised from self.task
-    _err: Exception | None = None
+    _err                   = None
 
     # child nodes
-    _children: tp.List[N]
+    #_children: tp.List[N]
 
     @property
-    def name(self) -> str:
+    def name(self)       :
         """Node name."""
         if self._name is not None:
             return self._name
 
         # use task name
-        if self.task and (name := getname(self.task)):
+        name = getname(self.task)
+        if self.task and name:
             return name
 
         # use directory name as node name
         return path.basename(self.path(abs=True))
 
     @property
-    def parent(self) -> N:
+    def parent(self)     :
         """Parent node."""
         return tp.cast(N, self._parent)
 
     @property
-    def done(self) -> bool:
+    def done(self)        :
         """Main function and child nodes executed successfully."""
         if self._endtime:
             return all(node.done for node in self)
@@ -123,7 +123,7 @@ class Node(Directory, tp.Generic[N]):
         return False
     
     @property
-    def elapsed(self) -> float | None:
+    def elapsed(self)                :
         """Total walltime."""
         if self.done:
             delta = self._endtime - (self._dispatchtime or self._starttime) # type: ignore
@@ -134,14 +134,14 @@ class Node(Directory, tp.Generic[N]):
 
             return delta + sum(delta_ws)
     
-    def __init__(self, cwd: str, data: dict, parent: Node | None):
+    def __init__(self, cwd     , data      , parent             ):
         super().__init__(cwd)
         self._init = data
         self._data = {}
         self._parent = parent
         self._children = []
     
-    def __getattr__(self, key: str):
+    def __getattr__(self, key     ):
         """Get node data (including parent data)."""
         if key.startswith('_'):
             return object.__getattribute__(self, key)
@@ -157,7 +157,7 @@ class Node(Directory, tp.Generic[N]):
         
         return None
     
-    def __setattr__(self, key: str, val):
+    def __setattr__(self, key     , val):
         """Set node data."""
         if key.startswith('_'):
             object.__setattr__(self, key, val)
@@ -180,7 +180,7 @@ class Node(Directory, tp.Generic[N]):
         for key, val in state.items():
             setattr(self, key, val)
 
-    def __getitem__(self, key: int) -> N:
+    def __getitem__(self, key     )     :
         """Get child node."""
         return self._children[key]
 
@@ -203,7 +203,8 @@ class Node(Directory, tp.Generic[N]):
         
         elif self._starttime:
             if self._endtime:
-                if elapsed := self.elapsed:
+                elapsed = self.elapsed
+                if elapsed:
                     # task done
                     delta = str(timedelta(seconds=int(round(elapsed))))
 
@@ -312,7 +313,8 @@ class Node(Directory, tp.Generic[N]):
                     args = [self] if getnargs(task) > 0 else ()
                 
                 # call task function
-                if (result := task(*args)) and asyncio.iscoroutine(result):
+                result = task(*args)
+                if result and asyncio.iscoroutine(result):
                     await result
         
         except Exception as e:
@@ -348,7 +350,7 @@ class Node(Directory, tp.Generic[N]):
         exclude = []
 
         def get_unfinished():
-            wss: tp.List[Node] = []
+            wss                = []
             
             for node in self:
                 if node not in exclude and not node.done:
@@ -356,7 +358,12 @@ class Node(Directory, tp.Generic[N]):
             
             return wss
 
-        while len(wss := get_unfinished()):
+        while True:
+            wss = get_unfinished()
+
+            if not len(wss):
+                break
+
             if self.concurrent:
                 # execute nodes concurrently
                 exclude += wss
@@ -371,14 +378,14 @@ class Node(Directory, tp.Generic[N]):
             if root.job.failed or root.job.aborted:
                 break
     
-    def update(self, items: dict):
+    def update(self, items      ):
         """Update properties from dict."""
         self._data.update(items)
 
-    def add(self, task: Task | None = None, /,
-        cwd: str | None = None, name: str | None = None, *,
-        args: list | tuple | None = None, concurrent: bool | None = None,
-        prober: tp.Callable[..., float | str | None] | None = None, **data) -> N:
+    def add(self, task              = None,
+        cwd             = None, name             = None, *,
+        args                      = None, concurrent              = None,
+        prober                                              = None, **data)     :
         """Add a child node or a child task."""
         if task is not None:
             if isinstance(task, (list, tuple)):
@@ -407,15 +414,15 @@ class Node(Directory, tp.Generic[N]):
 
         return tp.cast(N, node)
     
-    def add_mpi(self, cmd: Task, /,
-        nprocs: int | tp.Callable[[Directory], int] = 1,
-        cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None, *,
-        name: str | None = None, fname: str | None = None, args: list | tuple | None = None,
-        mpiarg: list | tuple | None = None, group_mpiarg: bool = False,
-        check_output: tp.Callable[..., None] | None = None, use_multiprocessing: bool | None = None,
-        cwd: str | None = None, data: dict | None = None,
-        timeout: tp.Literal['auto'] | float | None = 'auto',
-        ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise'):
+    def add_mpi(self, cmd      ,
+        nprocs                                      = 1,
+        cpus_per_proc      = 1, gpus_per_proc      = 0, mps             = None, *,
+        name             = None, fname             = None, args                      = None,
+        mpiarg                      = None, group_mpiarg       = False,
+        check_output                                = None, use_multiprocessing              = None,
+        cwd             = None, data              = None,
+        timeout                                    = 'auto',
+        ontimeout                                                     = 'raise'):
         """Run MPI task."""
         from .root import root
         from .mpiexec import mpiexec
@@ -442,7 +449,7 @@ class Node(Directory, tp.Generic[N]):
         self._data.clear()
         self._children.clear()
     
-    def stat(self, verbose: bool = False):
+    def stat(self, verbose       = False):
         """Structure and execution status."""
         stat = str(self)
 

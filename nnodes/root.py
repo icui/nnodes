@@ -1,4 +1,3 @@
-from __future__ import annotations
 import typing as tp
 import signal
 import asyncio
@@ -14,36 +13,36 @@ if tp.TYPE_CHECKING:
 class Root(Node):
     """Root node with job configuration."""
     # import path for job scheduler
-    system: tp.List[str]
+    #system: tp.List[str]
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
-    _mpi: MPI | None = None
+    _mpi             = None
 
     # runtime global cache
-    _cache: dict = {}
+    _cache       = {}
 
     # module of job scheduler
-    _job: Job
+    #_job: Job
 
     # currently being saved
     _saving = False
 
     # dict from config.toml
-    _config: dict
+    #_config: dict
     
     @property
-    def cache(self) -> dict:
+    def cache(self)        :
         return self._cache
 
     @property
-    def job(self) -> Job:
+    def job(self)       :
         return self._job
     
     @property
-    def mpi(self) -> MPI:
+    def mpi(self)       :
         return tp.cast('MPI', self._mpi)
     
-    def init(self, /, mpidir: str | None = None):
+    def init(self, mpidir             = None):
         """Restore state."""
         if hasattr(self, '_job'):
             # root already initialized
@@ -91,7 +90,7 @@ class Root(Node):
         # 3. no task failed twice in a row
         # 4. job is not in debug mode
         # 5. job is not already being requeued (due to insufficient walltime)
-        if self.job.inqueue and self.job.failed and not self.job.aborted \
+        if self.job.inqueue and self.job.failed and not self.job.aborted\
             and not self.job.debug and not self.job.paused and self.job.auto_requeue != False:
             self.job.requeue()
     

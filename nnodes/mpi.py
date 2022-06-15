@@ -1,4 +1,3 @@
-from __future__ import annotations
 import typing as tp
 import asyncio
 from os import path
@@ -15,16 +14,16 @@ if tp.TYPE_CHECKING:
 class MPI(Node):
     """Node for current MPI workspace."""
     # Index of current MPI process
-    rank: int
+    #rank: int
 
     # Total number of MPI processes
-    size: int
+    #size: int
 
     # MPI Comm World
-    comm: Intracomm
+    #comm: Intracomm
 
 
-def _call(size: int, idx: int):
+def _call(size     , idx     ):
     mpidir = path.dirname(argv[1]) or '.'
     root.init(mpidir=mpidir)
 
@@ -66,7 +65,8 @@ def _call(size: int, idx: int):
             if args is not None:
                 a += args
 
-            if asyncio.iscoroutine(result := func(*a)):
+            result = func(*a)
+            if asyncio.iscoroutine(result):
                 asyncio.run(result)
     
     else:

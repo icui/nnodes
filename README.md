@@ -1,5 +1,8 @@
 # nnodes
 
+## Note
+This is a temporary branch for users using Python 3.7 - 3.9. Please consider upgrading to Python 3.10 in the future.
+
 Nnodes is a simple workflow manager for Python functions and command line tools. It makes your life easier when running complicated jobs either in your local computer or in a large-scale cluster.
 
 [Documentation](https://icui.github.io/nnodes/index.html)
