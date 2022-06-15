@@ -331,10 +331,28 @@
 <dt class="sig sig-object py" id="nnodes.job.Slurm">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">nnodes.job.</span></span><span class="sig-name descname"><span class="pre">Slurm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nnodes.job.Slurm" title="Permalink to this definition">#</a></dt>
 <dd><p>Slurm-based cluster.</p>
+<dl class="py property">
+<dt class="sig sig-object py" id="nnodes.job.Slurm.inqueue">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">inqueue</span></span><a class="headerlink" href="#nnodes.job.Slurm.inqueue" title="Permalink to this definition">#</a></dt>
+<dd><p>Job is allocated from scheduler (enables automatic requeue and mpiexec timeout).</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="nnodes.job.Slurm.mpiexec">
 <span class="sig-name descname"><span class="pre">mpiexec</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nprocs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cpus_per_proc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gpus_per_proc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nnodes.job.Slurm.mpiexec" title="Permalink to this definition">#</a></dt>
 <dd><p>Get the command to call MPI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnodes.job.Slurm.requeue">
+<span class="sig-name descname"><span class="pre">requeue</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#nnodes.job.Slurm.requeue" title="Permalink to this definition">#</a></dt>
+<dd><p>Run current job again.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="nnodes.job.Slurm.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#nnodes.job.Slurm.write" title="Permalink to this definition">#</a></dt>
+<dd><p>Write job submission script to target directory.</p>
 </dd></dl>
 
 </dd></dl>
