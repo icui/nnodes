@@ -22,7 +22,7 @@ pip install .
 git clone https://github.com/icui/nnodes --branch=devel
 ```
 
-```3.0``` branch is for users using Python 3.9 or earlier, but it is not fully tested.
+```3.7``` branch is a temporary solution for users using Python 3.7 - 3.9, but is not fully tested.
 ```
-git clone https://github.com/icui/nnodes --branch=3.0
+git clone https://github.com/icui/nnodes --branch=3.7
 ```
