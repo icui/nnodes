@@ -79,8 +79,13 @@ def create_config():
     if not hasattr(cluster, 'cpus_per_node'):
         config['job']['gpus_per_node'] = int(input_float('Enter the number of GPUs per node (0 if not using GPU): '))
     
-    config['job']['nnodes'] = int(input_float('Enter the number of nodes to request: '))
-    config['job']['walltime'] = input_float('Enter the walltime to request (in minutes): ')
+    if cluster.no_scheduler:
+        config['job']['nnodes'] = int(input_float('Enter the number of CPUs available: '))
+        config['job']['walltime'] = 1000000
+
+    else:
+        config['job']['nnodes'] = int(input_float('Enter the number of nodes to request: '))
+        config['job']['walltime'] = input_float('Enter the walltime to request (in minutes): ')
     
     tmod, modname = input_str('Enter the module or file containing the main task: ', lambda name: import_module(name), 'invalid module path')
     _, clsname = input_str('Enter the function name of the main task: ', lambda name: getattr(tmod, name), 'invalid function name')

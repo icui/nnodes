@@ -22,7 +22,10 @@ class Job:
     debug: bool = False
 
     # resubmit if job fails
-    resubmit: bool = True
+    auto_requeue: bool = True
+
+    # no walltime and nnodes options
+    no_scheduler = False
 
     # avoid calling new MPI tasks if remaining walltime is less than certain minutes
     gap: float = 0.0
@@ -323,6 +326,16 @@ class Local(Job):
     """Local computer using multiprocessing instead of MPI."""
     nnmk_name = 'Persional Computer'
 
+    # number of CPUs per node
+    cpus_per_node = 1
+
+    # number of GPUs per node
+    gpus_per_node = 0
+
+    # no walltime and nnodes options
+    no_scheduler = True
+    
+    # replace MPI tasks with multiprocessing
     use_multiprocessing = True
 
 

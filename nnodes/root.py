@@ -92,7 +92,7 @@ class Root(Node):
         # 4. job is not in debug mode
         # 5. job is not already being requeued (due to insufficient walltime)
         if self.job.inqueue and self.job.failed and not self.job.aborted \
-            and not self.job.debug and not self.job.paused and self.job.resubmit != False:
+            and not self.job.debug and not self.job.paused and self.job.auto_requeue != False:
             self.job.requeue()
     
     def save(self):
