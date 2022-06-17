@@ -7,7 +7,7 @@ In this section, you will create two files: [```config.toml```](https://raw.gith
 ## Create config.toml
 Use ```nnmk``` as mentioned in introduction.
 
-Enter `3` (personal computer) in system selection.<br>
+Enter `6` (personal computer) in system selection.<br>
 Enter ```hello``` when prompt ```module containing the main task```.<br>
 Enter ```main``` when prompt ```function name of the main task```.
 
@@ -16,7 +16,7 @@ We have chose function ```main``` in ```hello.py``` as our main task. Let's defi
 ```py
 # hello.py
 def main(node):
-    """Entry point of the workflow, which is defined in config.toml."""
+    """Defined by config.toml as the entry point of the workflow."""
     print("Hello World!")
 ```
 A task function by default accepts its ```Node``` as its only argument. In this case, the ```node``` passed to ```main``` is the top level ```root``` node. After creating the file, enter ```nnrun``` and you will see the output.
