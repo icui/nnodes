@@ -25,17 +25,14 @@ Check out [Get started](https://icui.github.io/nnodes/basics/index.html) for det
 - **Progress control**.
 No job progress will be lost in nnodes. The progress management is adaptable so that an interrupted workflow can be stopped and resumed at any point, and it is possible to rewind to a previous state if any parameter does not turn out to perform well; running a partial workflow or merging multiple workflows are also supported.<br>
 ![Workflow](doc/source/images/readme/inversion.png)
-<!-- ![Workflow](../../doc/source/images/readme/inversion.png) -->
 
 - **MPI execution**.
 Parallel execution of MPI tasks is easy and no manual configuration is required. An MPI task from any part of the workflow will be sent to an MPI executor and be executed whenever the cluster resources is available. This makes sure that the node hours are fully utilized.<br>
 ![Workflow](doc/source/images/readme/mpi.png)
-<!-- ![Workflow](../../doc/source/images/readme/mpi.png) -->
 
 - **Parameter management**.
 Inspired by HTML document, nnodes introduces a hierarchical parameter system that simplifies the process of passing parameters to functions. A parameter in the parent node will by default be propagated to the child node, unless overwritten. This eliminates the need to pass the same parameter to different functions under the same parent node.<br>
 ![Workflow](doc/source/images/readme/inherit.png)
-<!-- ![Workflow](../../doc/source/images/readme/inherit.png) -->
 
 ## Why nnodes?
 Workflow manager is essential for many scientific applications and there is a large number of existing workflow managers available. Many of them are mature and well maintained (see [Workflows Community](https://workflows.community) for a comprehensive list). However, we believe that nnodes still has unique advantages. In short, it is simpler than most general-purpose workflow managers and more flexible than most problem-specific workflow managers.
