@@ -236,24 +236,17 @@ nnrun
 <li><p><strong>Progress control</strong>.
 No job progress will be lost in nnodes. The progress management is adaptable so that an interrupted workflow can be stopped and resumed at any point, and it is possible to rewind to a previous state if any parameter does not turn out to perform well; running a partial workflow or merging multiple workflows are also supported.<br>
 <img alt="Workflow" src="_images/inversion.png" /></p></li>
-</ul>
-<!-- ![Workflow](../../doc/source/images/readme/inversion.png) -->
-<ul class="simple">
 <li><p><strong>MPI execution</strong>.
 Parallel execution of MPI tasks is easy and no manual configuration is required. An MPI task from any part of the workflow will be sent to an MPI executor and be executed whenever the cluster resources is available. This makes sure that the node hours are fully utilized.<br>
 <img alt="Workflow" src="_images/mpi.png" /></p></li>
-</ul>
-<!-- ![Workflow](../../doc/source/images/readme/mpi.png) -->
-<ul class="simple">
 <li><p><strong>Parameter management</strong>.
 Inspired by HTML document, nnodes introduces a hierarchical parameter system that simplifies the process of passing parameters to functions. A parameter in the parent node will by default be propagated to the child node, unless overwritten. This eliminates the need to pass the same parameter to different functions under the same parent node.<br>
 <img alt="Workflow" src="_images/inherit.png" /></p></li>
 </ul>
-<!-- ![Workflow](../../doc/source/images/readme/inherit.png) -->
 </section>
 <section id="why-nnodes">
 <h2>Why nnodes?<a class="headerlink" href="#why-nnodes" title="Permalink to this heading">#</a></h2>
-<p>Workflow manager is essential for many scientific applications and there is a large number of existing workflow managers available. Many of them are mature and well maintained (see <a class="reference external" href="https://workflows.community">Workflows Community</a> for a comprehensive list). However, we believe that nnodes still has unique advantages. In short, it is simpler than most general-purpose workflow managers and more flexible than most problem-specific workflow managers.</p>
+<p>Workflow manager is essential for many scientific applications and there is a large number of existing workflow managers available. Many of them are mature and well maintained (see <a class="reference external" href="https://workflows.community">Workflows Community</a> for a curated list and <a class="reference external" href="https://s.apache.org/existing-workflow-systems">Existing Workflow Systems</a> for a comprehensive list). However, we believe that nnodes still has unique advantages. In short, it is simpler than most general-purpose workflow managers and more flexible than most problem-specific workflow managers.</p>
 <ul class="simple">
 <li><p><strong>Simplicity</strong>. Most professional workflow managers have very steep learning curves, and are sometimes deeply bound with specific computing architectures. Nodes, on the other hand, provides a unified interface for all operations and utilizes only high level APIs. Migrating existing workflows to nnodes is seamless in most cases.</p></li>
 <li><p><strong>Flexibility</strong>. Nnodes is not tied to a specific scientific problem, and it is decided by the user how deeply they wish to integrate their projects with nnodes. Users can simply use nnodes as a progress controller, or MPI executor, which requires little code change, or they can go so far as to let nnodes manage their entire project.</p></li>
