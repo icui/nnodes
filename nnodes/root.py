@@ -119,7 +119,7 @@ class Root(Node):
 
     def _signal(self, *_):
         """Requeue due to insufficient time."""
-        if self.inqueue and not self.job.aborted:
+        if self.inqueue and not self.job.aborted and not self.job._signaled:
             self.job.paused = True
             self.save()
             self.job._signaled = True
