@@ -8,25 +8,31 @@ See changes you have to make at the very bottom of this document.
 
 First activate `nnodes` environment
 
-```conda activate nnodes-env
+```
+conda activate nnodes-env
 ```
 
 If you don't have `nnodes` yet:
 
 1. Create an environment 
-```conda create -n nnodes-env "python>=3.10"
 ```
-1. Activate `nnodes` environment
-```conda create -n nnodes-env "python>=3.10"
+conda create -n nnodes-env "python>=3.10"
 ```
-2. Download `nnodes` 
-```git clone git@github.com:icui/nnodes.git
+2. Activate `nnodes` environment
 ```
-3. Enter `nnodes` directory 
-```cd nnodes
+conda activate nnodes-env
 ```
-4. Install `nnodes`
-```pip install -e .
+3. Download `nnodes` 
+```
+git clone git@github.com:icui/nnodes.git
+```
+4. Enter `nnodes` directory 
+```
+cd nnodes
+```
+5. Install `nnodes`
+```
+pip install -e .
 ```
 
 ## Running the example
