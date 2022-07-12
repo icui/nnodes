@@ -1,7 +1,8 @@
 """
 
 The goal of this workflow is to run 50 jobs, each on a single core in an
-embarrasingly parallel fashion; that is, the tasks do not need to communicate.
+embarrasingly parallel fashion on a cluster; that is, the tasks do not need to
+communicate.
 
 This can be easily done using the `node.add_mpi()`, where node is the root of
 the workflow and we simply add `mpi` jobs to it. It is important to realize that
@@ -18,6 +19,28 @@ made in the for loop are done or not.
 Should the allocation end before all jobs are done. The job can simply be
 resubmitted with no intervention of the user whatsoever. For a sample slurm
 script please checkout `slurm.sh` in this directory.
+
+---
+
+IMPORTANT: The current `config.toml` is set to work with Princeton's Tiger
+Cluster, which means the `.add_mpi()` call will use `srun` to submit jobs like
+shown above. `srun` is usually not available on a local machine and the hardware
+configuration, i.e., number of cores on a local machine will likely not match
+either. If you want to run the example locally, change
+
+``` 
+[job] 
+system = ["nnodes.job", "Tiger"] 
+... 
+```
+
+to
+
+```
+[job] 
+system = ["nnodes.job", "Local"] 
+...
+```
 
 """
 
