@@ -7,13 +7,13 @@ from subprocess import check_call
 class Job:
     """Base class for clusters."""
     # job name
-    name: tp.Optional[str] = None
+    name: str | None = None
 
     # number of nodes to request
     nnodes: int
 
     # account to submit the job
-    account: tp.Optional[str] = None
+    account: str | None = None
 
     # amount of walltime to request
     walltime: float
@@ -21,14 +21,20 @@ class Job:
     # submit to debug queue and do not requeue if job fails
     debug: bool = False
 
+    # resubmit if job fails
+    auto_requeue: bool = True
+
+    # no walltime and nnodes options
+    no_scheduler = False
+
     # avoid calling new MPI tasks if remaining walltime is less than certain minutes
     gap: float = 0.0
 
     # number of CPUs per node (if is None, the value must exist in config.toml)
-    cpus_per_node: int = 1
+    cpus_per_node: int
 
     # number of GPUs per node (if is None, the value must exist in config.toml)
-    gpus_per_node: int = 0
+    gpus_per_node: int
 
     # whether a node can run multiple MPI tasks
     node_splittable = False
@@ -94,9 +100,9 @@ class Job:
     def requeue(self):
         """Resubmit current job."""
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0) -> str:
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None) -> str:
         """Run a MPI task."""
-        raise NotImplementedError(f'mpiexec is not implemented ({cmd}, {nprocs}, {cpus_per_proc}, {gpus_per_proc})')
+        raise NotImplementedError(f'mpiexec is not implemented ({cmd})')
 
     def __init__(self, job: dict, state: list):
         # job state (paused, failed, aborted)
@@ -115,12 +121,12 @@ class Job:
         # execution start time
         self._exec_start = time()
 
-    def create(self, dst: tp.Optional[str] = None):
+    def create(self, dst: str | None = None):
         """Creates a directory as job workspace."""
         from .root import root
 
         if dst is None:
-            # write job script in currect directory
+            # write job script in current directory
             if root.has('job.bash'):
                 raise FileExistsError(f'job.bash already exists')
 
@@ -140,6 +146,8 @@ class Job:
 
 class LSF(Job):
     """LSF-based cluster."""
+    nnmk_name = 'LSF'
+
     @property
     def inqueue(self):
         return bool(environ.get('LSB_JOBID')) and environ.get('LSB_INTERACTIVE') != 'Y'
@@ -187,10 +195,9 @@ class LSF(Job):
 
     def requeue(self):
         """Run current job again."""
-        if self.inqueue:
-            check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
+        check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: tp.Union[int, float] = 0):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
         jsrun = 'jsrun'
 
@@ -200,16 +207,18 @@ class LSF(Job):
         
         a = 1
 
-        if isinstance(gpus_per_proc, float):
-            a = round(1 / gpus_per_proc)
-            cpus_per_proc *= a
+        if mps is not None:
+            a = mps
+            cpus_per_proc *= mps
             gpus_per_proc = 1
-            nprocs //= a
+            nprocs //= mps
 
         return f'{jsrun} -n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc} {cmd}'
 
 
 class Summit(LSF):
+    nnmk_name = 'Oak Ridge Summit (LSF)'
+
     # number of CPUs per node
     cpus_per_node = 42
 
@@ -219,13 +228,71 @@ class Summit(LSF):
 
 class Slurm(Job):
     """Slurm-based cluster."""
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+    nnmk_name = 'Slurm'
+
+    @property
+    def inqueue(self):
+        return bool(environ.get('SLURM_JOB_ID'))
+
+    def requeue(self):
+        """Run current job again."""
+        check_call('scontrol requeue ' + environ['SLURM_JOB_ID'], shell=True)
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
         return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
+
+    def write(self, cmd, dst):
+        from .root import root
+
+        # hours and minutes
+        hh = int(self.walltime // 60)
+        mm = int(self.walltime - hh * 60)
+
+        # job name
+        if self.name:
+            if dst == '.':
+                name = self.name
+            
+            else:
+                name = f'{self.name}_{dst}'
+        
+        else:
+            name = dst
+
+        # job script
+        lines = [
+            '#!/bin/bash',
+            f'#BSUB -J {name}',
+            f'#BSUB -W {hh:02d}:{mm:02d}',
+            f'#BSUB -nnodes {self.nnodes}',
+            f'#BSUB -o lsf.%J.o',
+            f'#BSUB -e lsf.%J.e',
+            f'#BSUB -alloc_flags "gpumps"'
+        ]
+        lines = [
+            '#!/bin/bash',
+            f'#SBATCH -J {name}',
+            f'#SBATCH -t {hh:02d}:{mm:02d}:00',
+            f'#SBATCH -N {self.nnodes}',
+            f'#SBATCH -o slurm.%J.o',
+            f'#SBATCH -e slurm.%J.e'
+        ]
+
+        if self.account:
+            lines.append(f'#SBATCH -A {self.account}')
+
+        # add main command
+        lines.append(cmd + '\n')
+
+        # write to workspace
+        root.writelines(lines, path.join(dst, 'job.bash'))
 
 
 class Tiger(Slurm):
     """Princeton TigerGPU"""
+    nnmk_name = 'Princeton TigerGPU (Slurm)'
+
     # number of CPUs per node
     cpus_per_node = 28
 
@@ -235,6 +302,8 @@ class Tiger(Slurm):
 
 class Traverse(Slurm):
     """Princeton Traverse"""
+    nnmk_name = 'Princeton Traverse (Slurm)'
+
     # number of CPUs per node
     cpus_per_node = 32
 
@@ -244,6 +313,8 @@ class Traverse(Slurm):
 
 class DTN(Slurm):
     """Oak Ridge National Lab Data Transfer Node."""
+    nnmk_name = 'Oak Ridge DTN (Slurm)'
+
     # number of CPUs per node
     cpus_per_node = 16
 
@@ -253,13 +324,27 @@ class DTN(Slurm):
 
 class Local(Job):
     """Local computer using multiprocessing instead of MPI."""
+    nnmk_name = 'Persional Computer'
+
+    # number of CPUs per node
+    cpus_per_node = 1
+
+    # number of GPUs per node
+    gpus_per_node = 0
+
+    # no walltime and nnodes options
+    no_scheduler = True
+    
+    # replace MPI tasks with multiprocessing
     use_multiprocessing = True
 
 
 class LocalMPI(Local):
     """Local computer with MPI installed."""
+    nnmk_name = 'Persional Computer with MPI installed'
+
     use_multiprocessing = False
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0):
+    def mpiexec(self, cmd: str, nprocs: int, *_):
         """Get the command to call MPI."""
         return f'$(which mpiexec) -n {nprocs} {cmd}'

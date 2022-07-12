@@ -4,6 +4,7 @@ from sys import stderr
 from time import time
 from datetime import timedelta
 from functools import partial
+from inspect import signature
 from importlib import import_module
 import asyncio
 import typing as tp
@@ -11,7 +12,7 @@ import typing as tp
 from .directory import Directory
 
 
-def parse_import(path: tp.Iterable[str]) -> tp.Any:
+def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
         target = import_module(path[0])
@@ -23,26 +24,50 @@ def parse_import(path: tp.Iterable[str]) -> tp.Any:
     
     return path
 
+
+def getnargs(func: tp.Callable) -> int:
+    """Get the number of arguments required by a function."""
+    return len(signature(func).parameters)
+
+
+def getname(task: Task) -> str | None:
+    """Get default task name."""
+    if isinstance(task, (list, tuple)):
+        return task[-1]
+    
+    if isinstance(task, str):
+        return task.split(' ')[0].split('/')[-1].split('.')[-1]
+
+    while isinstance(task, partial):
+        task = task.func
+    
+    if hasattr(task, '__name__'):
+        return task.__name__.lstrip('_')
+
+
 # generic Node type for parent and children
 N = tp.TypeVar('N', bound='Node')
+
+# type for a node task
+Task = tp.Callable | tp.List[str] | tp.Tuple[str, ...] | str
 
 
 class Node(Directory, tp.Generic[N]):
     """A directory with a task."""
     # node task
-    task: Task
+    task: Task | None
 
     # task progress prober
-    prober: Prober
+    prober: tp.Callable[..., float | str | None] | None
 
     # whether child nodes are executed concurrently
-    concurrent: tp.Optional[bool]
+    concurrent: bool | None
 
     # arguments passed to task (pass Node if args is None)
-    args: tp.Optional[tp.Iterable]
+    args: tp.Iterable | None
 
     # display name
-    _name: tp.Optional[str] = None
+    _name: str | None = None
 
     # initial data passed to self.__init__
     _init: dict
@@ -51,19 +76,22 @@ class Node(Directory, tp.Generic[N]):
     _data: dict
 
     # parent node
-    _parent: tp.Optional[N]
+    _parent: N | None
 
     # time when task started
-    _starttime: tp.Optional[float] = None
+    _starttime: float | None = None
 
     # time when MPI task started
-    _dispatchtime: tp.Optional[float] = None
+    _dispatchtime: float | None = None
 
     # time when task ended
-    _endtime: tp.Optional[float] = None
+    _endtime: float | None = None
+
+    # task is added from node.add_mpi()
+    _is_mpi: bool = False
 
     # exception raised from self.task
-    _err: tp.Optional[Exception] = None
+    _err: Exception | None = None
 
     # child nodes
     _children: tp.List[N]
@@ -74,21 +102,9 @@ class Node(Directory, tp.Generic[N]):
         if self._name is not None:
             return self._name
 
-        func = self.task
-        
-        if func:
-            # use task name as node name
-            if isinstance(func, (list, tuple)):
-                return func[1]
-            
-            if isinstance(func, str):
-                return func.split('.')[-1]
-
-            while isinstance(func, partial):
-                func = func.func
-            
-            if hasattr(func, '__name__'):
-                return func.__name__.lstrip('_')
+        # use task name
+        if self.task and (name := getname(self.task)):
+            return name
 
         # use directory name as node name
         return path.basename(self.path(abs=True))
@@ -107,7 +123,7 @@ class Node(Directory, tp.Generic[N]):
         return False
     
     @property
-    def elapsed(self) -> tp.Optional[float]:
+    def elapsed(self) -> float | None:
         """Total walltime."""
         if self.done:
             delta = self._endtime - (self._dispatchtime or self._starttime) # type: ignore
@@ -118,7 +134,7 @@ class Node(Directory, tp.Generic[N]):
 
             return delta + sum(delta_ws)
     
-    def __init__(self, cwd: str, data: dict, parent: tp.Optional[N]):
+    def __init__(self, cwd: str, data: dict, parent: Node | None):
         super().__init__(cwd)
         self._init = data
         self._data = {}
@@ -202,9 +218,13 @@ class Node(Directory, tp.Generic[N]):
                     name += ' (terminated)'
                 
                 else:
-                    if self.prober:
+                    if self._is_mpi and self._dispatchtime is None:
+                        # MPI task not yet allocated
+                        name += ' (pending)'
+                    
+                    elif self.prober:
                         try:
-                            state = self.prober(self)
+                            state = self.prober(self) if getnargs(self.prober) > 0 else self.prober()
 
                             if isinstance(state, float):
                                 name += f' ({int(state*100)}%)'
@@ -216,8 +236,8 @@ class Node(Directory, tp.Generic[N]):
                             pass
                     
                     if name == self.name:
-                        # job exited unexpectedly
                         if time() - (root._init.get('_ping') or 0) > 70:
+                            # job exited unexpectedly
                             name += ' (not running)'
                         
                         else:
@@ -267,6 +287,7 @@ class Node(Directory, tp.Generic[N]):
         try:
             # import task
             task = self.task
+            args = self.args
 
             if isinstance(task, (list, tuple)):
                 # import function from custom module
@@ -274,7 +295,7 @@ class Node(Directory, tp.Generic[N]):
             
             elif isinstance(task, str):
                 task = partial(self.call_async, task)
-                self.args = ()
+                args = ()
 
             # print to stdout
             indent = 0
@@ -285,10 +306,14 @@ class Node(Directory, tp.Generic[N]):
 
             print(' ' * indent + self.name)
 
-            # call task function
-            args = self.args if self.args is not None else [self]
-            if task and (result := task(*args)) and asyncio.iscoroutine(result):
-                await result
+            if task:
+                # set default argument
+                if args is None:
+                    args = [self] if getnargs(task) > 0 else ()
+                
+                # call task function
+                if (result := task(*args)) and asyncio.iscoroutine(result):
+                    await result
         
         except Exception as e:
             from traceback import format_exc
@@ -350,10 +375,10 @@ class Node(Directory, tp.Generic[N]):
         """Update properties from dict."""
         self._data.update(items)
 
-    def add(self, task: Task[tp.Any] = None, /,
-        cwd: tp.Optional[str] = None, name: tp.Optional[str] = None, *,
-        args: tp.Optional[tp.Union[list, tuple]] = None,
-        concurrent: tp.Optional[bool] = None, prober: Prober = None, **data) -> N:
+    def add(self, task: Task | None = None, /,
+        cwd: str | None = None, name: str | None = None, *,
+        args: list | tuple | None = None, concurrent: bool | None = None,
+        prober: tp.Callable[..., float | str | None] | None = None, **data) -> N:
         """Add a child node or a child task."""
         if task is not None:
             if isinstance(task, (list, tuple)):
@@ -382,17 +407,18 @@ class Node(Directory, tp.Generic[N]):
 
         return tp.cast(N, node)
     
-    def add_mpi(self, cmd: tp.Union[str, tp.Callable], /,
-        nprocs: tp.Union[int, tp.Callable[[Directory], int]] = 1,
-        cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: tp.Optional[int] = None, *,
-        name: tp.Optional[str] = None, arg: tp.Any = None, arg_mpi: tp.Optional[list] = None,
-        check_output: tp.Optional[tp.Callable[[str], None]] = None, use_multiprocessing: tp.Optional[bool] = None,
-        cwd: tp.Optional[str] = None, data: tp.Optional[dict] = None,
-        timeout: tp.Union[tp.Literal['auto'], float, None] = 'auto',
-        ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None] = 'raise'):
+    def add_mpi(self, cmd: Task, /,
+        nprocs: int | tp.Callable[[Directory], int] = 1,
+        cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None, *,
+        name: str | None = None, fname: str | None = None, args: list | tuple | None = None,
+        mpiarg: list | tuple | None = None, group_mpiarg: bool = False,
+        check_output: tp.Callable[..., None] | None = None, use_multiprocessing: bool | None = None,
+        cwd: str | None = None, data: dict | None = None,
+        timeout: tp.Literal['auto'] | float | None = 'auto',
+        ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise'):
         """Run MPI task."""
         from .root import root
-        from .mpiexec import mpiexec, getname
+        from .mpiexec import mpiexec
 
         if use_multiprocessing is None:
             use_multiprocessing = root.job.use_multiprocessing
@@ -400,9 +426,10 @@ class Node(Directory, tp.Generic[N]):
         if mps and gpus_per_proc != 0:
             print('warning: gpus_per_proc is ignored because mps is set')
         
-        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, name, arg, arg_mpi,
-            check_output, use_multiprocessing, timeout, ontimeout)
-        node = self.add(func, cwd, name or getname(cmd), **(data or {}))
+        func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, fname or name,
+            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout)
+        node = self.add(func, cwd, name or fname or getname(cmd), **(data or {}))
+        node._is_mpi = True
         
         return node
     
@@ -446,9 +473,3 @@ class Node(Directory, tp.Generic[N]):
                     stat += str(node)
         
         return stat
-
-
-# type annotation for a node task function
-T = tp.TypeVar('T', bound='Node')
-Task = tp.Optional[tp.Union[tp.Callable[[T], tp.Optional[tp.Coroutine]], tp.Tuple[str, str], str]]
-Prober = tp.Optional[tp.Callable[[Node], tp.Union[float, str, None]]]

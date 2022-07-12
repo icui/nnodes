@@ -17,7 +17,7 @@ class Root(Node):
     system: tp.List[str]
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
-    _mpi: tp.Optional[MPI] = None
+    _mpi: MPI | None = None
 
     # runtime global cache
     _cache: dict = {}
@@ -43,7 +43,7 @@ class Root(Node):
     def mpi(self) -> MPI:
         return tp.cast('MPI', self._mpi)
     
-    def init(self, /, mpidir: tp.Optional[str] = None):
+    def init(self, /, mpidir: str | None = None):
         """Restore state."""
         if hasattr(self, '_job'):
             # root already initialized
@@ -92,7 +92,7 @@ class Root(Node):
         # 4. job is not in debug mode
         # 5. job is not already being requeued (due to insufficient walltime)
         if self.job.inqueue and self.job.failed and not self.job.aborted \
-            and not self.job.debug and not self.job.paused:
+            and not self.job.debug and not self.job.paused and self.job.auto_requeue != False:
             self.job.requeue()
     
     def save(self):
@@ -119,7 +119,7 @@ class Root(Node):
 
     def _signal(self, *_):
         """Requeue due to insufficient time."""
-        if not self.job.aborted:
+        if self.inqueue and not self.job.aborted:
             self.job.paused = True
             self.save()
             self.job._signaled = True

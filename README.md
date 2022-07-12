@@ -1,35 +1,52 @@
 # nnodes
 
-A simple workflow manager.
-
-Intro slides ([PDF](https://github.com/icui/nnodes/raw/main/doc/slides.pdf))
+Nnodes is a simple workflow manager for Python functions and command line tools. It makes your life easier when running complicated jobs either in your local computer or in a large-scale cluster.
 
 [Documentation](https://icui.github.io/nnodes/index.html)
 
-## What nnodes does
+Intro slides ([PDF](https://raw.githubusercontent.com/icui/nnodes/main/doc/source/files/slides.pdf)), poster ([PDF](https://raw.githubusercontent.com/icui/nnodes/main/doc/source/files/poster.pdf))
 
-nnodes is a workflow manager that makes your life easier when defining or running complicated jobs either in your local computer or in a large-scale cluster. The basic element of nnodes is called a ```node```, which can:
+## Quick start
+Install
+```sh
+pip install nnodes
+```
 
-- Call a Python function or run a shell command.
-- Contain any number of child nodes which can be executed either sequentially or concurrently.
-- Be assigned with properties which will be propagated to child nodes.
+Run example workflow (Gaussian inversion, requires numpy)
+```sh
+git clone https://github.com/icui/nnodes
+cd nnodes/examples/gaussian
+nnrun
+```
 
-The execution status each ```node``` will be saved so that you don't need to re-run any completed tasks when a job fails or exceeds the scheduled walltime. nnodes can also manage the parallel execution of multiple MPI tasks. Once you define MPI tasks in different nodes, nnodes will figure out the best way to run these.
+Check out [Get started](https://icui.github.io/nnodes/basics/index.html) for details.
 
-## Why you may need a workflow manager
-Below is an example of an iterative inversion workflow (thanks [@lsawade](https://github.com/lsawade) for the figure and example). We want to obtain the parameters of N events. Each event involves a few forward modeling and data processing steps. Without a workflow manager, you might encounter the following problems:
+## Features
+- **Progress control**.
+No job progress will be lost in nnodes. The progress management is adaptable so that an interrupted workflow can be stopped and resumed at any point, and it is possible to rewind to a previous state if any parameter does not turn out to perform well; running a partial workflow or merging multiple workflows are also supported.<br>
+![Workflow](doc/source/images/readme/inversion.png)
 
-- It's not always possible to finish the whole workflow within a single run, so progress backup is necessary.
-- Managing parameters for functions can be tedious. Each function may require at least 10 arguments, like event, iteration, step, etc.
-- It's more effecient to run expensive tasks like forward modeling in parallel, but some clusters don't like it if you call 1,000 ```mpiexec``` commands at the same time.
-- You may want to test the workflow in a local computer and do the actual computation in a remote cluster or even many different clusters. This may involve a lot of code changes.
+- **MPI execution**.
+Parallel execution of MPI tasks is easy and no manual configuration is required. An MPI task from any part of the workflow will be sent to an MPI executor and be executed whenever the cluster resources is available. This makes sure that the node hours are fully utilized.<br>
+![Workflow](doc/source/images/readme/mpi.png)
 
-nnodes solves all these problems with ease. See ```examples/gaussian``` for a detailed explanation.
+- **Parameter management**.
+Inspired by HTML document, nnodes introduces a hierarchical parameter system that simplifies the process of passing parameters to functions. A parameter in the parent node will by default be propagated to the child node, unless overwritten. This eliminates the need to pass the same parameter to different functions under the same parent node.<br>
+![Workflow](doc/source/images/readme/inherit.png)
 
-![Workflow](examples/gaussian/figures/inversion.png)
+## Why nnodes?
+Workflow manager is essential for many scientific applications and there is a large number of existing workflow managers available. Many of them are mature and well maintained (see [Workflows Community](https://workflows.community) for a curated list and [Existing Workflow Systems](https://s.apache.org/existing-workflow-systems) for a comprehensive list). However, we believe that nnodes still has unique advantages. In short, it is simpler than most general-purpose workflow managers and more flexible than most problem-specific workflow managers.
+
+- **Simplicity**. Most professional workflow managers have very steep learning curves, and are sometimes deeply bound with specific computing architectures. Nodes, on the other hand, provides a unified interface for all operations and utilizes only high level APIs. Migrating existing workflows to nnodes is seamless in most cases.
+- **Flexibility**. Nnodes is not tied to a specific scientific problem, and it is decided by the user how deeply they wish to integrate their projects with nnodes. Users can simply use nnodes as a progress controller, or MPI executor, which requires little code change, or they can go so far as to let nnodes manage their entire project.
+- **Portability**. Nnodes currently supports Slurm and LSF systems but also has API for users to define their custom environment. The workflow is saved in a single pickle file that can be transferred to a new system and continue from where it was left off. The MPI executor adapts automatically so no manual configuration is needed to utilize the full cluster resources.
 
 ## Alternatives
 If you are looking for more options, below are some projects worth checking out:
 
 - [Ensemble Toolkit](https://radical-cybertools.github.io/entk/index.html)
 - [FireWorks](https://materialsproject.github.io/fireworks/)
+- [Workflows Community](https://workflows.community)
+
+## Contact
+If you have any questions, please submit a [GitHub issue](https://github.com/icui/nnodes/issues) or send an [email](mailto:ccui@princeton.edu).

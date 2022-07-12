@@ -1,24 +1,24 @@
 from __future__ import annotations
 import asyncio
 import typing as tp
-from functools import partial
 from math import ceil
 from time import time
 from datetime import timedelta
 from fractions import Fraction
 
 from .root import root
+from .node import getname, getnargs, parse_import, Task
 from .directory import Directory
 
 
 # pending tasks (Fraction for MPI tasks, int for multiprocessing tasks)
-_pending: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
+_pending: tp.Dict[asyncio.Lock, Fraction | int] = {}
 
 # running tasks (Fraction for MPI tasks, int for multiprocessing tasks)
-_running: tp.Dict[asyncio.Lock, tp.Union[Fraction, int]] = {}
+_running: tp.Dict[asyncio.Lock, Fraction | int] = {}
 
 
-def _dispatch(lock: asyncio.Lock, nnodes: tp.Union[Fraction, int]) -> bool:
+def _dispatch(lock: asyncio.Lock, nnodes: Fraction | int) -> bool:
     """Execute a task if resource is available."""
     ntotal = root.job.mp_nprocs_max if (
         mp := isinstance(nnodes, int)) else root.job.nnodes
@@ -31,30 +31,28 @@ def _dispatch(lock: asyncio.Lock, nnodes: tp.Union[Fraction, int]) -> bool:
     return False
 
 
-def getname(cmd: tp.Union[str, tp.Callable]) -> str:
-    """Get file name to store pickled function and / or stdout."""
-    if isinstance(cmd, str):
-        return 'mpiexec_' + cmd.split(' ')[0].split('/')[-1]
+def splitargs(mpiarg: list | tuple, nprocs: int) -> list:
+    """Split arguments to n processes."""
+    # assign a chunk of arg_mpi to each processor
+    mpiarg = sorted(mpiarg)
+    args = []
+    chunk = int(ceil(len(mpiarg) / nprocs))
 
-    func = cmd
+    for i in range(nprocs - 1):
+        args.append(mpiarg[i * chunk: (i + 1) * chunk])
 
-    while isinstance(func, partial):
-        func = func.func
+    args.append(mpiarg[(nprocs - 1) * chunk:])
 
-    if hasattr(func, '__name__'):
-        return 'mpiexec_' + func.__name__.lstrip('_')
-
-    return 'mpiexec'
+    return args
 
 
-async def mpiexec(cmd: tp.Union[str, tp.Callable],
-                  nprocs: tp.Union[int, tp.Callable[[Directory], int]], cpus_per_proc: int, gpus_per_proc: int,
-                  mps: tp.Optional[int], name: tp.Optional[str], arg: tp.Any, arg_mpi: tp.Optional[list],
-                  check_output: tp.Optional[tp.Callable[[str], None]], use_multiprocessing: bool,
-                  timeout: tp.Union[tp.Literal['auto'], float, None],
-                  ontimeout: tp.Union[tp.Literal['raise'], tp.Callable[[], None], None],
+async def mpiexec(cmd: Task,
+                  nprocs: int | tp.Callable[[Directory], int], cpus_per_proc: int, gpus_per_proc: int,
+                  mps: int | None, fname: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
+                  group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
+                  timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
                   d: Directory) -> str:
-    """Schedule the execution of MPI task"""
+    """Schedule the execution of MPI task."""
     # task queue controller
     lock = asyncio.Lock()
 
@@ -67,8 +65,8 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nprocs = nprocs(d)
 
         # remove unused proceesses
-        if arg_mpi:
-            nprocs = min(len(arg_mpi), nprocs)
+        if mpiarg:
+            nprocs = min(len(mpiarg), nprocs)
 
         # calculate node number
         if use_multiprocessing:
@@ -78,8 +76,12 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             nnodes = Fraction(nprocs * cpus_per_proc, root.job.cpus_per_node)
 
             if mps:
-                nnodes = max(nnodes, Fraction(
-                    nprocs, mps * root.job.gpus_per_node))
+                # 1 GPU is shared by <mps> processes
+                if nprocs % mps != 0:
+                    raise ValueError(
+                        f'nprocs must be a multiple of mpi ({nprocs}, {mps})')
+
+                nnodes = max(nnodes, Fraction(nprocs, mps))
 
             elif gpus_per_proc > 0:
                 nnodes = max(nnodes, Fraction(
@@ -99,56 +101,68 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
         if hasattr(d, '_dispatchtime'):
             setattr(d, '_dispatchtime', time())
 
-        # save function as pickle to run in parallel
-        if name is None:
-            name = getname(cmd)
+        # determine file name for log, stdout and stderr
+        if fname is None:
+            fname = getname(cmd)
 
-        if not callable(cmd) and (arg is not None or arg_mpi is not None):
-            raise NotImplementedError('cannot add arguments to shell command')
-
-        if callable(cmd) or use_multiprocessing:
-            if arg_mpi:
-                # assign a chunk of arg_mpi to each processor
-                arg_mpi = sorted(arg_mpi)
-                args = []
-                chunk = int(ceil(len(arg_mpi) / nprocs))
-
-                # adjust number of processors
-                if nprocs * chunk > len(arg_mpi):
-                    nprocs -= (nprocs * chunk - len(arg_mpi)) // chunk
-
-                for i in range(nprocs - 1):
-                    args.append(arg_mpi[i * chunk: (i + 1) * chunk])
-
-                args.append(arg_mpi[(nprocs - 1) * chunk:])
+            if fname is None:
+                fname = 'mpiexec'
 
             else:
-                args = None
+                fname = 'mpiexec_' + fname
+
+        if d.has(f'{fname}.log'):
+            i = 1
+
+            while d.has(f'{fname}#{i}.log'):
+                i += 1
+
+            fname = f'{fname}#{i}'
+
+        # import task
+        if isinstance(cmd, (list, tuple)):
+            task = parse_import(cmd)
+
+        else:
+            task = cmd
+
+        if not callable(task):
+            args = None
+            mpiarg = None
+
+        if callable(task) or use_multiprocessing:
+            # save function as pickle to run in parallel
+            if args:
+                args = list(args)
+
+            if mpiarg:
+                mpiarg = splitargs(mpiarg, nprocs)
 
             cwd = None
-            d.rm(f'{name}.*')
-            d.dump((cmd, arg, args), f'{name}.pickle')
-            cmd = f'python -m "nnodes.mpi" {d.path(name)}'
+            d.rm(f'{fname}.*')
+            d.dump((task, args, mpiarg, group_mpiarg), f'{fname}.pickle')
+            task = f'python -m "nnodes.mpi" {d.path(fname)}'
 
         else:
             cwd = d.path()
 
         # wrap with parallel execution command
         if use_multiprocessing:
-            cmd = f'{cmd} -mp {nprocs}'
+            task = f'{task} -mp {nprocs}'
 
         else:
-            cmd = root.job.mpiexec(
-                cmd, nprocs, cpus_per_proc, 1 / mps if mps else gpus_per_proc)
+            task = root.job.mpiexec(
+                task, nprocs, cpus_per_proc, gpus_per_proc, mps)
+
+        # write the command actually used
+        d.write(f'{task}\n', f'{fname}.log')
+        time_start = time()
 
         # create subprocess to execute task
-        with open(d.path(f'{name}.out'), 'w') as f:
-            # write command
-            f.write(f'{cmd}\n\n')
-            time_start = time()
+        with open(d.path(f'{fname}.stdout'), 'w') as f_o, open(d.path(f'{fname}.stderr'), 'w') as f_e:
 
             # execute in subprocess
-            process = await asyncio.create_subprocess_shell(cmd, cwd=cwd, stdout=f, stderr=f)
+            process = await asyncio.create_subprocess_shell(task, cwd=cwd, stdout=f_o, stderr=f_e)
 
             if timeout == 'auto':
                 if root.job.inqueue:
@@ -171,18 +185,29 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
             else:
                 await process.communicate()
 
-            # write elapsed time
-            f.write(
-                f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n')
+        # custom function to resolve output
+        if check_output:
+            nargs = getnargs(check_output)
 
-        if d.has(f'{name}.error'):
-            raise RuntimeError(d.read(f'{name}.error'))
+            if nargs == 0:
+                check_output()
+
+            elif nargs == 1:
+                check_output(d.read(f'{fname}.stdout'))
+
+            else:
+                check_output(d.read(f'{fname}.stdout'),
+                             d.read(f'{fname}.stderr'))
+
+        # write elapsed time
+        d.write(
+            f'\nelapsed: {timedelta(seconds=int(time()-time_start))}\n', f'{fname}.log', 'a')
+
+        if d.has(f'{fname}.error'):
+            raise RuntimeError(d.read(f'{fname}.error'))
 
         elif process.returncode:
-            raise RuntimeError(f'{cmd}\nexit code: {process.returncode}')
-
-        elif check_output:
-            check_output(d.read(f'{name}.out'))
+            raise RuntimeError(f'{task}\nexit code: {process.returncode}')
 
     except Exception as e:
         err = e
@@ -206,4 +231,4 @@ async def mpiexec(cmd: tp.Union[str, tp.Callable],
     if err:
         raise err
 
-    return tp.cast(str, name)
+    return tp.cast(str, fname)
