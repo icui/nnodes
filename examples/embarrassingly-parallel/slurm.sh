@@ -4,8 +4,8 @@
 #SBATCH --error=nnodes-embarrassingly-parallel.err  # stderr file
 #SBATCH --nodes=1                 # node count
 #SBATCH --ntasks=30               # total number of tasks across all nodes
-#SBATCH --mem-per-cpu=100G        # memory per cpu-core (4G is default)
-#SBATCH --time=00:10:00           # total run time limit (HH:MM:SS)
+#SBATCH --mem=100G                # memory per cpu-core (4G is default)
+#SBATCH --time=00:02:00           # total run time limit (HH:MM:SS)
 
 
 echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."

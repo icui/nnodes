@@ -1,13 +1,12 @@
 [job]
-system = ["nnodes.job", "Local"]
+system = ["nnodes.job", "Tiger"]
 name = "embarrassingly-parallel"
 nnodes = 1
 account = "GEO111"
-walltime = 10.0
+walltime = 5.0
 gap = 2.0
 debug = true
-# Add description for number of cpus per node manually..
-cpus_per_node = 4
+node_splittable = true
 
 
 [root]
