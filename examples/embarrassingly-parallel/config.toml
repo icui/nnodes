@@ -1,0 +1,15 @@
+[job]
+system = ["nnodes.job", "Tiger"]
+name = "embarrassingly-parallel"
+nnodes = 1
+account = "GEO111"
+walltime = 5.0
+gap = 2.0
+debug = true
+node_splittable = true
+
+
+[root]
+task = ["hello", "main"]
+workflowname = 'Embarrassingly Parallel'
+

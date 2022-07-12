@@ -130,3 +130,8 @@ dmypy.json
 root.pickle
 .vscode
 .DS_Store
+
+# Random example folder
+examples/embarrassingly-parallel/jobs
+examples/embarrassingly-parallel/nnodes-embarrassingly-parallel.out
+examples/embarrassingly-parallel/nnodes-embarrassingly-parallel.err
