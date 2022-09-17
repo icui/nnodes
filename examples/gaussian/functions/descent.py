@@ -6,6 +6,20 @@ from .hessian import read_hessian
 from .metadata import read_optparams
 
 
+def damp_gH(m, m0, g, H, damping):
+
+    # Compute model residual
+    modelres = m - m0
+
+    # Compute damping factor
+    factor = damping * np.trace(H) / m.size
+
+    # Update the Hessian and the gradient
+    dH = H + factor * np.diag(np.ones(m.size))
+    dg = g + factor * modelres
+
+    return dg, dH
+
 def write_descent(dm, outdir, it, ls=None):
 
     # Get dir
@@ -54,9 +68,16 @@ def descent(outdir, it, ls=None):
     g *= s
     H = np.diag(s) @ H @ np.diag(s)
 
+    # Damp the gradient and the Hessian
+    if damping > 0.0:
+        if it == 0:
+            m0 = read_model(outdir, it, 0)
+        else:
+            m0 = read_model(outdir, it-1, 0)
+        g, H = damp_gH(m, m0, g, H, damping)
+
     # Get direction
-    dm = np.linalg.solve(H + damping * np.trace(H) /
-                         m.size * np.diag(np.ones(m.size)), -g)
+    dm = np.linalg.solve(H, -g)
 
     # Write direction to file
     write_descent(dm*s, outdir, it, ls)

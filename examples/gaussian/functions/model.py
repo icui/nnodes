@@ -76,12 +76,13 @@ def read_scaling(outdir):
 
     # Write scaling to metadir
     metadir = os.path.join(outdir, 'meta')
-    
+
     # Create filename that contains both iteration and linesearch number
     file = os.path.join(metadir, "scaling.npy")
-    
+
     # Return the scaling vector
     return np.load(file)
+
 
 def write_names(mnames, outdir):
 
