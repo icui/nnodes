@@ -12,6 +12,10 @@ import typing as tp
 from .directory import Directory
 
 
+class InsufficientWalltime(TimeoutError):
+    """Timeout due in insufficient walltime."""
+
+
 def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
@@ -314,7 +318,11 @@ class Node(Directory):
         
         except Exception as e:
             from traceback import format_exc
-            
+
+            if isinstance(e, InsufficientWalltime):
+                root._signal()
+                return
+
             self._starttime = None
             self._dispatchtime = None
             self._err = e
