@@ -7,7 +7,7 @@ from datetime import timedelta
 from fractions import Fraction
 
 from .root import root
-from .node import getname, getnargs, parse_import, Task
+from .node import getname, getnargs, parse_import, Task, InsufficientWalltime
 from .directory import Directory
 
 
@@ -158,6 +158,9 @@ async def mpiexec(cmd: Task,
         d.write(f'{task}\n', f'{fname}.log')
         time_start = time()
 
+        # timeout due to insufficient walltime
+        walltime_out = False
+
         # create subprocess to execute task
         with open(d.path(f'{fname}.stdout'), 'w') as f_o, open(d.path(f'{fname}.stderr'), 'w') as f_e:
 
@@ -167,6 +170,7 @@ async def mpiexec(cmd: Task,
             if timeout == 'auto':
                 if root.job.inqueue:
                     timeout = root.job.remaining * 60
+                    walltime_out = True
 
                 else:
                     timeout = None
@@ -176,7 +180,10 @@ async def mpiexec(cmd: Task,
                     await asyncio.wait_for(process.communicate(), timeout)
 
                 except asyncio.TimeoutError as e:
-                    if ontimeout == 'raise':
+                    if walltime_out:
+                        raise InsufficientWalltime('Insufficient walltime.')
+
+                    elif ontimeout == 'raise':
                         raise e
 
                     elif ontimeout:
@@ -219,14 +226,16 @@ async def mpiexec(cmd: Task,
     if lock in _running:
         del _running[lock]
 
-    # sort entries by their node number
-    pendings = sorted(_pending.items(), key=lambda item: item[1], reverse=True)
+    # run next MPI task
+    if not isinstance(err, InsufficientWalltime):
+        # sort entries by their node number
+        pendings = sorted(_pending.items(), key=lambda item: item[1], reverse=True)
 
-    # execute tasks if resource is available
-    for lock, nnodes in pendings:
-        if _dispatch(lock, nnodes):
-            del _pending[lock]
-            lock.release()
+        # execute tasks if resource is available
+        for lock, nnodes in pendings:
+            if _dispatch(lock, nnodes):
+                del _pending[lock]
+                lock.release()
 
     if err:
         raise err
