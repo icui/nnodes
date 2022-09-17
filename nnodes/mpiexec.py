@@ -6,8 +6,6 @@ from time import time
 from datetime import timedelta
 from fractions import Fraction
 
-from matplotlib.pyplot import isinteractive
-
 from .root import root
 from .node import getname, getnargs, parse_import, Task, InsufficientWalltime
 from .directory import Directory
