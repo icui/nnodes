@@ -1,4 +1,4 @@
-# Run Embarrasingly Parallel example 
+# Run Embarrassingly Parallel example 
 
 This example can work technically on a local machine, but is aimed at running
 a loop on a cluster embarrassingly parallel. If you want to run it locally, 
