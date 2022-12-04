@@ -12,6 +12,10 @@ import typing as tp
 from .directory import Directory
 
 
+class InsufficientWalltime(TimeoutError):
+    """Timeout due in insufficient walltime."""
+
+
 def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
     """Import function from a custom module."""
     if isinstance(path, (list, tuple)):
@@ -45,14 +49,11 @@ def getname(task: Task) -> str | None:
         return task.__name__.lstrip('_')
 
 
-# generic Node type for parent and children
-N = tp.TypeVar('N', bound='Node')
-
 # type for a node task
 Task = tp.Callable | tp.List[str] | tp.Tuple[str, ...] | str
 
 
-class Node(Directory, tp.Generic[N]):
+class Node(Directory):
     """A directory with a task."""
     # node task
     task: Task | None
@@ -76,7 +77,7 @@ class Node(Directory, tp.Generic[N]):
     _data: dict
 
     # parent node
-    _parent: N | None
+    _parent: Node | None
 
     # time when task started
     _starttime: float | None = None
@@ -94,7 +95,7 @@ class Node(Directory, tp.Generic[N]):
     _err: Exception | None = None
 
     # child nodes
-    _children: tp.List[N]
+    _children: tp.List[Node]
 
     @property
     def name(self) -> str:
@@ -110,9 +111,9 @@ class Node(Directory, tp.Generic[N]):
         return path.basename(self.path(abs=True))
 
     @property
-    def parent(self) -> N:
+    def parent(self) -> Node:
         """Parent node."""
-        return tp.cast(N, self._parent)
+        return tp.cast(Node, self._parent)
 
     @property
     def done(self) -> bool:
@@ -180,7 +181,7 @@ class Node(Directory, tp.Generic[N]):
         for key, val in state.items():
             setattr(self, key, val)
 
-    def __getitem__(self, key: int) -> N:
+    def __getitem__(self, key: int) -> Node:
         """Get child node."""
         return self._children[key]
 
@@ -317,7 +318,11 @@ class Node(Directory, tp.Generic[N]):
         
         except Exception as e:
             from traceback import format_exc
-            
+
+            if isinstance(e, InsufficientWalltime):
+                root._signal()
+                return
+
             self._starttime = None
             self._dispatchtime = None
             self._err = e
@@ -378,7 +383,7 @@ class Node(Directory, tp.Generic[N]):
     def add(self, task: Task | None = None, /,
         cwd: str | None = None, name: str | None = None, *,
         args: list | tuple | None = None, concurrent: bool | None = None,
-        prober: tp.Callable[..., float | str | None] | None = None, **data) -> N:
+        prober: tp.Callable[..., float | str | None] | None = None, **data) -> Node:
         """Add a child node or a child task."""
         if task is not None:
             if isinstance(task, (list, tuple)):
@@ -403,9 +408,9 @@ class Node(Directory, tp.Generic[N]):
         elif cwd is not None:
             node._name = cwd
         
-        self._children.append(tp.cast(N, node))
+        self._children.append(node)
 
-        return tp.cast(N, node)
+        return node
     
     def add_mpi(self, cmd: Task, /,
         nprocs: int | tp.Callable[[Directory], int] = 1,

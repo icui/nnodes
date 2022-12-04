@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+authors:
+- family-names: "Cui"
+  given-names: "Congyue"
+- family-names: "Lucas"
+  given-names: "Sawade"
+- family-names: "Jeroen"
+  given-names: "Tromp"
+title: "nnodes"
+version: 0.0.1
+date-released: 2022-07-20
+url: "https://github.com/icui/nnodes"
