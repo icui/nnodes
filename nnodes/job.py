@@ -1,4 +1,5 @@
 import typing as tp
+import math
 from time import time
 from os import path, environ
 from subprocess import check_call
@@ -301,8 +302,7 @@ class Tiger(Slurm):
 
 
 class Traverse(Slurm):
-    """Princeton Traverse overloaded with gpu-mps flag
-    Note that gpu-mps in an srun call only ever uses one node."""
+    """Princeton Traverse overloaded with gpu-mps flag."""
     
     nnmk_name = 'Princeton Traverse (Slurm)'
 
@@ -315,15 +315,13 @@ class Traverse(Slurm):
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
 
-        
         if mps is not None:
-            gpu_opts = f"-N1 --gres=gpu:4 --gpu-mps"
+            nodes = max(math.ceil(nprocs/self.cpus_per_node), math.ceil((nprocs//mps)/self.gpus_per_node))
+            gpu_opts = f"-N{nodes} --gres=gpu:{self.gpus_per_node} --gpu-mps"
         else:
             gpu_opts = f"--gpus-per-task {gpus_per_proc}"
 
-        ncmd =  f'srun -n {nprocs} {gpu_opts} {cmd}'
-        
-        return ncmd
+        return  f'srun -n {nprocs} {gpu_opts} {cmd}'
 
 
 class DTN(Slurm):
