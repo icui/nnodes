@@ -301,7 +301,9 @@ class Tiger(Slurm):
 
 
 class Traverse(Slurm):
-    """Princeton Traverse"""
+    """Princeton Traverse overloaded with gpu-mps flag
+    Note that gpu-mps in an srun call only ever uses one node."""
+    
     nnmk_name = 'Princeton Traverse (Slurm)'
 
     # number of CPUs per node
@@ -309,6 +311,19 @@ class Traverse(Slurm):
 
     # number of GPUs per node
     gpus_per_node = 4
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+        """Get the command to call MPI."""
+
+        
+        if mps is not None:
+            gpu_opts = f"-N1 --gres=gpu:4 --gpu-mps"
+        else:
+            gpu_opts = f"--gpus-per-task {gpus_per_proc}"
+
+        ncmd =  f'srun -n {nprocs} {gpu_opts} {cmd}'
+        
+        return ncmd
 
 
 class DTN(Slurm):
