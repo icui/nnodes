@@ -2,7 +2,7 @@
 from nnodes import root
 from os import curdir
 from os.path import abspath
-from sys import path
+from sys import path, argv
 from time import time
 from datetime import timedelta
 
@@ -21,5 +21,7 @@ def bin():
 
     # Run the workflow.
     time_start = time()
+    if '-r' in argv:
+        root.rm('root.pickle')
     root.run()
     print(f'elapsed: {timedelta(seconds=int(time()-time_start))}')
