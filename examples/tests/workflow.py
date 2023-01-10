@@ -59,7 +59,7 @@ def test_mpi(node):
     node.add_mpi(test_mpi_print, args=('test mpi/mpi 3',), name='test_mpi_print2', check_output=test_mpi_check2)
 
     # use multiprocessing
-    node.add_mpi(test_mpi_print, args=('test mpi/mpi 4',), name='test_mpi_print3', use_multiprocessing=True)
+    node.add_mpi(test_mpi_print, args=('test mpi/mpi 4',), name='test_mpi_print3', use_multiprocessing=True, priority=1)
 
     # approach 3: function process-dependent arguments and default number of MPI processes
     node.add_mpi(test_mpi_write1, 7, mpiarg=list(range(100)))

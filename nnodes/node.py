@@ -420,7 +420,8 @@ class Node(Directory):
         check_output: tp.Callable[..., None] | None = None, use_multiprocessing: bool | None = None,
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
-        ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise'):
+        ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise',
+        priority: int = 0):
         """Run MPI task."""
         from .root import root
         from .mpiexec import mpiexec
@@ -432,7 +433,7 @@ class Node(Directory):
             print('warning: gpus_per_proc is ignored because mps is set')
         
         func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, fname or name,
-            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout)
+            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout, priority)
         node = self.add(func, cwd, name or fname or getname(cmd), **(data or {}))
         node._is_mpi = True
         
