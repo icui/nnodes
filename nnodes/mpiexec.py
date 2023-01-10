@@ -10,6 +10,9 @@ from .root import root
 from .node import getname, getnargs, parse_import, Task, InsufficientWalltime
 from .directory import Directory
 
+if tp.TYPE_CHECKING:
+    from .job import Job
+
 
 # pending task, asyncio.Lock -> (nnodes, priority) (Fraction for MPI tasks, int for multiprocessing tasks)
 _pending: tp.Dict[asyncio.Lock, tp.Tuple[Fraction | int, int]] = {}
@@ -51,7 +54,7 @@ async def mpiexec(cmd: Task,
                   mps: int | None, fname: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
                   group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
                   timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
-                  priority: int, d: Directory) -> str:
+                  priority: int, exec_args: tp.Dict[tp.Type[Job], str] | None, d: Directory) -> str:
     """Schedule the execution of MPI task."""
     # task queue controller
     lock = asyncio.Lock()
@@ -151,8 +154,22 @@ async def mpiexec(cmd: Task,
             task = f'{task} -mp {nprocs}'
 
         else:
+            # additional mpiexec arguments
+            args = None
+            
+            if exec_args is not None:
+                # use arguments from add_mpi arguments
+                for job_class, args_ in exec_args.items():
+                    if isinstance(root.job, job_class):
+                        args = args_
+                        break
+            
+            if args is None:
+                # use default exec_args from root.job
+                args = root.job.exec_args
+
             task = root.job.mpiexec(
-                task, nprocs, cpus_per_proc, gpus_per_proc, mps)
+                task, nprocs, cpus_per_proc, gpus_per_proc, mps, args)
 
         # write the command actually used
         d.write(f'{task}\n', f'{fname}.log')
