@@ -155,21 +155,21 @@ async def mpiexec(cmd: Task,
 
         else:
             # additional mpiexec arguments
-            args = None
+            args_cmd: str | None = None
             
             if exec_args is not None:
                 # use arguments from add_mpi arguments
-                for job_class, args_ in exec_args.items():
-                    if isinstance(root.job, job_class):
-                        args = args_
+                for cls_, args_ in exec_args.items():
+                    if isinstance(root.job, cls_):
+                        args_cmd = args_
                         break
             
-            if args is None:
+            if args_cmd is None:
                 # use default exec_args from root.job
-                args = root.job.exec_args
+                args_cmd = root.job.exec_args
 
             task = root.job.mpiexec(
-                task, nprocs, cpus_per_proc, gpus_per_proc, mps, args)
+                task, nprocs, cpus_per_proc, gpus_per_proc, mps, args_cmd)
 
         # write the command actually used
         d.write(f'{task}\n', f'{fname}.log')
