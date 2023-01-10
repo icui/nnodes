@@ -11,10 +11,10 @@ from .node import getname, getnargs, parse_import, Task, InsufficientWalltime
 from .directory import Directory
 
 
-# pending tasks (Fraction for MPI tasks, int for multiprocessing tasks)
-_pending: tp.Dict[asyncio.Lock, Fraction | int] = {}
+# pending task, asyncio.Lock -> (nnodes, priority) (Fraction for MPI tasks, int for multiprocessing tasks)
+_pending: tp.Dict[asyncio.Lock, tp.Tuple[Fraction | int, int]] = {}
 
-# running tasks (Fraction for MPI tasks, int for multiprocessing tasks)
+# running tasks, asyncio.Lock -> nnodes
 _running: tp.Dict[asyncio.Lock, Fraction | int] = {}
 
 
@@ -51,7 +51,7 @@ async def mpiexec(cmd: Task,
                   mps: int | None, fname: str | None, args: list | tuple | None, mpiarg: list | tuple | None,
                   group_mpiarg: bool, check_output: tp.Callable[..., None] | None, use_multiprocessing: bool | None,
                   timeout: tp.Literal['auto'] | float | None, ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None,
-                  d: Directory) -> str:
+                  priority: int, d: Directory) -> str:
     """Schedule the execution of MPI task."""
     # task queue controller
     lock = asyncio.Lock()
@@ -94,7 +94,7 @@ async def mpiexec(cmd: Task,
         await lock.acquire()
 
         if not _dispatch(lock, nnodes):
-            _pending[lock] = nnodes
+            _pending[lock] = (nnodes, priority)
             await lock.acquire()
 
         # set dispatchtime for node
@@ -227,13 +227,14 @@ async def mpiexec(cmd: Task,
         del _running[lock]
 
     # run next MPI task
-    if not isinstance(err, InsufficientWalltime):
-        # sort entries by their node number
-        pendings = sorted(_pending.items(), key=lambda item: item[1], reverse=True)
+    if not isinstance(err, InsufficientWalltime) and len(_pending) > 0:
+        # sort entries by their node number and priority, np is (nnodes, priority)
+        nnodes_max = max(np[0] for np in _pending.values())
+        pendings = sorted(_pending.items(), key=lambda item: item[1][1] * nnodes_max + item[1][0], reverse=True)
 
         # execute tasks if resource is available
-        for lock, nnodes in pendings:
-            if _dispatch(lock, nnodes):
+        for lock, np in pendings:
+            if _dispatch(lock, np[0]):
                 del _pending[lock]
                 lock.release()
 
