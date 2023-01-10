@@ -11,6 +11,9 @@ import typing as tp
 
 from .directory import Directory
 
+if tp.TYPE_CHECKING:
+    from .job import Job
+
 
 class InsufficientWalltime(TimeoutError):
     """Timeout due in insufficient walltime."""
@@ -384,7 +387,22 @@ class Node(Directory):
         cwd: str | None = None, name: str | None = None, *,
         args: list | tuple | None = None, concurrent: bool | None = None,
         prober: tp.Callable[..., float | str | None] | None = None, **data) -> Node:
-        """Add a child node or a child task."""
+        """Add a child node with or without a task.
+
+        Args:
+            task (Task | None, optional): Task to be executed. Defaults to None.
+            cwd (str | None, optional): Working directory of the child node. Defaults to None.
+            name (str | None, optional): Name of the child node. If is None, name will be determined by task. Defaults to None.
+            args (list | tuple | None, optional): Arguments passed to task function. Defaults to None.
+            concurrent (bool | None, optional): The child node will execute its child nodes concurrently. Defaults to None.
+            prober (tp.Callable[..., float  |  str  |  None] | None, optional): Function that probes the execution status of the node.
+                If returns a float, the value is the task progress (0 to 1).
+                If returns a str, the value is arbitary task status string.
+                Defaults to None.
+
+        Returns:
+            Node: The child node added.
+        """
         if task is not None:
             if isinstance(task, (list, tuple)):
                 assert len(task) == 2
@@ -421,8 +439,42 @@ class Node(Directory):
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
         ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise',
-        priority: int = 0):
-        """Run MPI task."""
+        priority: int = 0) -> Node:
+        """Add a child node that executed an MPI task.
+
+        Args:
+            cmd (Task): task to be executed
+            nprocs (int | tp.Callable[[Directory], int], optional): Number of MPI processes. Defaults to 1.
+            cpus_per_proc (int, optional): Number of CPUs in an MPI process. Defaults to 1.
+            gpus_per_proc (int, optional): Number of GPUs in an MPI process. Defaults to 0.
+            mps (int | None, optional): Number of GPUs in a processes with multi-Process Service (MPS). Defaults to None.
+            name (str | None, optional): Task name. Defaults to None.
+            fname (str | None, optional): File name of the mpiexec files. Defaults to None.
+            args (list | tuple | None, optional): Arguments passed to task. Defaults to None.
+            mpiarg (list | tuple | None, optional): Process-specific arguments passed to task.
+                If is not None, items in mpiarg will be the first argument passed to each task
+                (placed before args). Defaults to None.
+            group_mpiarg (bool, optional): Instead of passing each item of mpiarg to a task,
+                pass a list of all subitems in mpiarg assigned to it. Defaults to False.
+            check_output (tp.Callable[..., None] | None, optional): Optional function after MPI execution.
+                Can be used as postprocess script and raise error if the task does not yield desired output.
+                Can take 0, 1 or 2 arguments as input.
+                If the function takes 1 argument, stdout will be passed.
+                If the function takes 2 arguments, stdout and stderr will be passed.
+                Defaults to None.
+            use_multiprocessing (bool | None, optional): Explicitly determine whether or not to use multiprocessing.
+                If is None, multiprocessing will be used based on the job configuration. Defaults to None.
+            cwd (str | None, optional): Working directory of the child node. Defaults to None.
+            data (dict | None, optional): Keyword arguments set to the child node. Defaults to None.
+            timeout (tp.Literal['auto'] | float | None, optional): Abort task if elapsed time > timeout (in minutes).
+                If set to 'auto', timeout will be job.walltime - job.gap. Defaults to 'auto'.
+            ontimeout (tp.Literal['raise'] | tp.Callable[[], None] | None, optional): Callback when job aborted due to timeout.
+                If set to 'raise', an InsufficientWalltime error will be raised. Defaults to 'raise'.
+            priority (int, optional): Task priority in mpiexec wait list. Defaults to 0.
+
+        Returns:
+            Node: The child node added that executes the MPI task.
+        """
         from .root import root
         from .mpiexec import mpiexec
 
