@@ -286,7 +286,7 @@ class Node(Directory):
         self._endtime = None
         self._err = None
         self._data.clear()
-        root.save()
+        root.checkpoint()
 
         try:
             # import task
@@ -343,7 +343,7 @@ class Node(Directory):
         else:
             self._endtime = time()
         
-        root.save()
+        root.checkpoint()
     
     async def _exec_children(self):
         """Execute self._children."""
