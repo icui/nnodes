@@ -135,3 +135,5 @@ root.pickle
 examples/embarrassingly-parallel/jobs
 examples/embarrassingly-parallel/nnodes-embarrassingly-parallel.out
 examples/embarrassingly-parallel/nnodes-embarrassingly-parallel.err
+examples/LimitIO/events/
+examples/LimitIO/tempfilelist.txt

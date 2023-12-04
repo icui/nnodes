@@ -45,7 +45,7 @@ def eventloop(node: Node):
 
     node.concurrent = True
 
-    node.add(eventcheck, events=node.events)
+    node.add(eventcheck, events=node.events, concurrent = False)
 
 
 def eventcheck(node: Node):
@@ -78,13 +78,15 @@ def eventcheck(node: Node):
 
     if len(events) > 0:
         print(events)
-        node.add('sleep 15', name='eventcheck-sleep')
-        node.parent.add(eventcheck, events=events)
+        child_node = node.add('sleep 15', name='eventcheck-sleep')
+        child_node.add(update_parent, events=events)
 
+def update_parent(node: Node):
+    node.parent.parent.parent.add(eventcheck, events=node.events)
 
 def inversion(node: Node):
 
-    print('Inverting event: ', node.event)
+    print('Inverting event: ', node.events)
     node.add('sleep 60', name='inversion-sleep')
 
 
