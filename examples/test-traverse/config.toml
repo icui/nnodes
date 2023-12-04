@@ -1,0 +1,13 @@
+[job]
+system = ["nnodes.job", "Traverse"]
+name = "Traverse-Test"
+nnodes = 2
+walltime = 10.0
+gap = 2.0
+debug = true
+node_splittable = true
+
+
+[root]
+task = ["hello", "main"]
+workflowname = 'Traverse-Test'
