@@ -100,6 +100,9 @@ class Node(Directory):
     # child nodes
     _children: tp.List[Node]
 
+    # currently executing async child tasks
+    _executing_async: tp.List[tp.Tuple[asyncio.Task, Node]] | None = None
+
     @property
     def name(self) -> str:
         """Node name."""
@@ -349,26 +352,32 @@ class Node(Directory):
         """Execute self._children."""
         if not self._endtime:
             return
-        
+
         from .root import root
-        
+
         # skip executed nodes
         exclude = []
 
         def get_unfinished():
             wss: tp.List[Node] = []
-            
+
             for node in self:
                 if node not in exclude and not node.done:
                     wss.append(node)
-            
+
             return wss
 
         while len(wss := get_unfinished()):
             if self.concurrent:
                 # execute nodes concurrently
                 exclude += wss
+                self._executing_async = []
                 await asyncio.gather(*(node.execute() for node in wss))
+
+                # wait for nodes dynamically added during execution
+                exclude += [item[1] for item in self._executing_async]
+                await asyncio.gather(*(item[0] for item in self._executing_async))
+                self._executing_async = None
 
             else:
                 # execute nodes in sequence
@@ -427,6 +436,9 @@ class Node(Directory):
             node._name = cwd
         
         self._children.append(node)
+
+        if isinstance(self._executing_async, list):
+            self._executing_async.append((asyncio.create_task(node.execute()), node))
 
         return node
     
