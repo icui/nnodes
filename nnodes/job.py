@@ -31,6 +31,9 @@ class Job:
     # avoid calling new MPI tasks if remaining walltime is less than certain minutes
     gap: float = 0.0
 
+    # arbitary arguments added after mpiexec
+    exec_args: str | None = None
+
     # number of CPUs per node (if is None, the value must exist in config.toml)
     cpus_per_node: int
 
@@ -101,8 +104,9 @@ class Job:
     def requeue(self):
         """Resubmit current job."""
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None) -> str:
-        """Run a MPI task."""
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0,
+        mps: int | None = None, args: str | None = None) -> str:
+        """Returns the command to run an MPI task."""
         raise NotImplementedError(f'mpiexec is not implemented ({cmd})')
 
     def __init__(self, job: dict, state: list):
@@ -198,23 +202,39 @@ class LSF(Job):
         """Run current job again."""
         check_call('brequeue ' + environ['LSB_JOBID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0,
+        mps: int | None = None, args: str | None = None):
         """Get the command to call MPI."""
-        jsrun = 'jsrun'
+        cmds = ['jsrun']
 
         if nprocs == 1:
             # avoid MPI warning in Summit
-            jsrun += ' --smpiargs="off"'
+            cmds.append('--smpiargs="off"')
         
+        # Number of MPI tasks (ranks) per resource set
         a = 1
 
         if mps is not None:
+            # <mps> tasks per resource set
             a = mps
-            cpus_per_proc *= mps
-            gpus_per_proc = 1
-            nprocs //= mps
 
-        return f'{jsrun} -n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc} {cmd}'
+            # <mps> CPUs per resource set
+            cpus_per_proc *= mps
+
+            # 1 GPU per resource set
+            gpus_per_proc = 1
+
+            # number of resource sets
+            nprocs //= mps
+        
+        cmds.append(f'-n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc}')
+
+        if args is not None:
+            cmds.append(args)
+        
+        cmds.append(cmd)
+
+        return ' '.join(cmds)
 
 
 class Summit(LSF):
@@ -239,9 +259,20 @@ class Slurm(Job):
         """Run current job again."""
         check_call('scontrol requeue ' + environ['SLURM_JOB_ID'], shell=True)
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0,
+        mps: int | None = None, args: str | None = None):
         """Get the command to call MPI."""
-        return f'srun -n {nprocs} --cpus-per-task {cpus_per_proc} --gpus-per-task {gpus_per_proc} --ntasks-per-core=1 {cmd}'
+        cmds = [f'srun -n {nprocs} --cpus-per-task  {cpus_per_proc} --gpus-per-task {gpus_per_proc}']
+
+        if args is not None:
+            cmds.append(args)
+        
+        if args is None or '--ntasks-per-core' not in args:
+            cmds.append('--ntasks-per-core 1')
+        
+        cmds.append(cmd)
+
+        return ' '.join(cmds)
 
     def write(self, cmd, dst):
         from .root import root

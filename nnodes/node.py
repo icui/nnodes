@@ -100,6 +100,9 @@ class Node(Directory):
     # child nodes
     _children: tp.List[Node]
 
+    # currently executing async child tasks
+    _executing_async: tp.List[tp.Tuple[asyncio.Task, Node]] | None = None
+
     @property
     def name(self) -> str:
         """Node name."""
@@ -174,7 +177,7 @@ class Node(Directory):
         state = {}
         
         for key in tp.get_type_hints(Node):
-            if key.startswith('_'):
+            if key.startswith('_') and key != '_executing_async':
                 state[key] = getattr(self, key)
         
         return state
@@ -286,7 +289,7 @@ class Node(Directory):
         self._endtime = None
         self._err = None
         self._data.clear()
-        root.save()
+        root.checkpoint()
 
         try:
             # import task
@@ -343,32 +346,38 @@ class Node(Directory):
         else:
             self._endtime = time()
         
-        root.save()
+        root.checkpoint()
     
     async def _exec_children(self):
         """Execute self._children."""
         if not self._endtime:
             return
-        
+
         from .root import root
-        
+
         # skip executed nodes
         exclude = []
 
         def get_unfinished():
             wss: tp.List[Node] = []
-            
+
             for node in self:
                 if node not in exclude and not node.done:
                     wss.append(node)
-            
+
             return wss
 
         while len(wss := get_unfinished()):
             if self.concurrent:
                 # execute nodes concurrently
                 exclude += wss
+                self._executing_async = []
                 await asyncio.gather(*(node.execute() for node in wss))
+
+                # wait for nodes dynamically added during execution
+                exclude += [item[1] for item in self._executing_async]
+                await asyncio.gather(*(item[0] for item in self._executing_async))
+                self._executing_async = None
 
             else:
                 # execute nodes in sequence
@@ -428,6 +437,9 @@ class Node(Directory):
         
         self._children.append(node)
 
+        if isinstance(self._executing_async, list):
+            self._executing_async.append((asyncio.create_task(node.execute()), node))
+
         return node
     
     def add_mpi(self, cmd: Task, /,
@@ -439,7 +451,7 @@ class Node(Directory):
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
         ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise',
-        priority: int = 0) -> Node:
+        priority: int = 0, exec_args: tp.Dict[tp.Type[Job], str] | None = None) -> Node:
         """Add a child node that executed an MPI task.
 
         Args:
@@ -471,6 +483,11 @@ class Node(Directory):
             ontimeout (tp.Literal['raise'] | tp.Callable[[], None] | None, optional): Callback when job aborted due to timeout.
                 If set to 'raise', an InsufficientWalltime error will be raised. Defaults to 'raise'.
             priority (int, optional): Task priority in mpiexec wait list. Defaults to 0.
+            exec_args (tp.Dict[tp.Type[Job], str] | None, optional): Cluster-specific arguments to passed to mpiexec.
+                This option is intended to be task-dependant, if you want the option to be applied to all MPI tasks, set root.job.exec_args instead.
+                Values of the dict are the arguments, and will be ignored if root.job is not a subclass of its key.
+                e.g. {Slurm: '--cpu-freq=low', LSF: '--memory_per_rs 200'} means that '--cpu-freq=low' will be passed to Slurm clusters
+                and '--memory_per_rs 200' will be passed to LSF clusters. Defaults to None.
 
         Returns:
             Node: The child node added that executes the MPI task.
@@ -485,7 +502,7 @@ class Node(Directory):
             print('warning: gpus_per_proc is ignored because mps is set')
         
         func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, fname or name,
-            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout, priority)
+            args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout, priority, exec_args)
         node = self.add(func, cwd, name or fname or getname(cmd), **(data or {}))
         node._is_mpi = True
         

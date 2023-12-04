@@ -11,10 +11,16 @@ if tp.TYPE_CHECKING:
     from .job import Job
 
 
+_saving = 0
+
+
 class Root(Node):
     """Root node with job configuration."""
     # import path for job scheduler
     system: tp.List[str]
+
+    # internal interval of calling self.save()
+    save_interval: int | float | None
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: MPI | None = None
@@ -84,6 +90,7 @@ class Root(Node):
 
         asyncio.create_task(self._ping())
         await super().execute()
+        root.save()
 
         # requeue job if the following conditions are satisfied:
         # 1. job is allocated from job scheduler (can be requeued)
@@ -94,6 +101,16 @@ class Root(Node):
         if self.job.inqueue and self.job.failed and not self.job.aborted \
             and not self.job.debug and not self.job.paused and self.job.auto_requeue != False:
             self.job.requeue()
+    
+    def checkpoint(self):
+        """Save with a certain limit on frequency."""
+        global _saving
+
+        if self.save_interval and time() - self.save_interval < _saving:
+            return
+        
+        _saving = time()
+        self.save()
     
     def save(self):
         """Save state from event loop."""
