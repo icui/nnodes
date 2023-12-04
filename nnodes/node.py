@@ -177,7 +177,7 @@ class Node(Directory):
         state = {}
         
         for key in tp.get_type_hints(Node):
-            if key.startswith('_'):
+            if key.startswith('_') and key != '_executing_async':
                 state[key] = getattr(self, key)
         
         return state
