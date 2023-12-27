@@ -62,7 +62,7 @@ class Job:
     def paused(self):
         """Job paused due to insuffcient time."""
         return self._state[0]
-    
+
     @paused.setter
     def paused(self, key: bool):
         self._state[0] = key
@@ -71,7 +71,7 @@ class Job:
     def failed(self):
         """Any task failed during execution."""
         return self._state[1]
-    
+
     @failed.setter
     def failed(self, key: bool):
         self._state[1] = key
@@ -80,7 +80,7 @@ class Job:
     def aborted(self):
         """Any task failed twice during execution."""
         return self._state[2]
-    
+
     @aborted.setter
     def aborted(self, key: bool):
         self._state[2] = key
@@ -89,7 +89,7 @@ class Job:
     def inqueue(self) -> bool:
         """Job is allocated from scheduler (enables automatic requeue and mpiexec timeout)."""
         return False
-    
+
     @property
     def remaining(self) -> float:
         """Remaining walltime in minutes."""
@@ -122,7 +122,7 @@ class Job:
 
         for key, val in job.items():
             setattr(self, key, val)
-        
+
         # execution start time
         self._exec_start = time()
 
@@ -136,7 +136,7 @@ class Job:
                 raise FileExistsError(f'job.bash already exists')
 
             dst = '.'
-        
+
         else:
             # write job script in a subdirectory
             if root.has(dst):
@@ -168,10 +168,10 @@ class LSF(Job):
         if self.name:
             if dst == '.':
                 name = self.name
-            
+
             else:
                 name = f'{self.name}_{dst}'
-        
+
         else:
             name = dst
 
@@ -210,7 +210,7 @@ class LSF(Job):
         if nprocs == 1:
             # avoid MPI warning in Summit
             cmds.append('--smpiargs="off"')
-        
+
         # Number of MPI tasks (ranks) per resource set
         a = 1
 
@@ -226,12 +226,12 @@ class LSF(Job):
 
             # number of resource sets
             nprocs //= mps
-        
+
         cmds.append(f'-n {nprocs} -a {a} -c {cpus_per_proc} -g {gpus_per_proc}')
 
         if args is not None:
             cmds.append(args)
-        
+
         cmds.append(cmd)
 
         return ' '.join(cmds)
@@ -266,10 +266,10 @@ class Slurm(Job):
 
         if args is not None:
             cmds.append(args)
-        
+
         if args is None or '--ntasks-per-core' not in args:
             cmds.append('--ntasks-per-core 1')
-        
+
         cmds.append(cmd)
 
         return ' '.join(cmds)
@@ -285,10 +285,10 @@ class Slurm(Job):
         if self.name:
             if dst == '.':
                 name = self.name
-            
+
             else:
                 name = f'{self.name}_{dst}'
-        
+
         else:
             name = dst
 
@@ -332,9 +332,23 @@ class Tiger(Slurm):
     gpus_per_node = 4
 
 
+class Andes(Slurm):
+
+    # number of CPUs per node
+    cpus_per_node = 32
+
+    # number of GPUs per node
+    gpus_per_node = 0
+
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1,
+                *args, **kwargs):
+        """Get the command to call MPI."""
+        return  f'srun -n {nprocs} -c {cpus_per_proc} --exclusive --cpu-bind=cores {cmd}'
+
+
 class Traverse(Slurm):
     """Princeton Traverse overloaded with gpu-mps flag."""
-    
+
     nnmk_name = 'Princeton Traverse (Slurm)'
 
     # number of CPUs per node
@@ -343,7 +357,8 @@ class Traverse(Slurm):
     # number of GPUs per node
     gpus_per_node = 4
 
-    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None):
+    def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1,
+                gpus_per_proc: int = 0, mps: int | None = None):
         """Get the command to call MPI."""
 
         if mps is not None:
@@ -378,7 +393,7 @@ class Local(Job):
 
     # no walltime and nnodes options
     no_scheduler = True
-    
+
     # replace MPI tasks with multiprocessing
     use_multiprocessing = True
 
