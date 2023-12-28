@@ -22,6 +22,9 @@ class Root(Node):
     # internal interval of calling self.save()
     save_interval: int | float | None
 
+    # default value of node.retry
+    default_retry: int = 0
+
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: MPI | None = None
 
