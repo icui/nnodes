@@ -1,7 +1,7 @@
 from __future__ import annotations
 from os import path
 from sys import stderr
-from time import time
+from time import time, sleep
 from datetime import timedelta
 from functools import partial
 from inspect import signature
@@ -66,6 +66,9 @@ class Node(Directory):
 
     # whether child nodes are executed concurrently
     concurrent: bool | None
+
+    # number of times the task is retried
+    retry: int | None
 
     # arguments passed to task (pass Node if args is None)
     args: tp.Iterable | None
@@ -291,60 +294,80 @@ class Node(Directory):
         self._data.clear()
         root.checkpoint()
 
-        try:
-            # import task
-            task = self.task
-            args = self.args
+        retry = 0
 
-            if isinstance(task, (list, tuple)):
-                # import function from custom module
-                task = parse_import(task)
-            
-            elif isinstance(task, str):
-                task = partial(self.call_async, task)
-                args = ()
+        if isinstance(self.retry, int):
+            retry = self.retry
 
-            # print to stdout
-            indent = 0
-            node = self
-            while node.parent is not None:
-                indent += 2
-                node = node.parent
-
-            print(' ' * indent + self.name)
-
-            if task:
-                # set default argument
-                if args is None:
-                    args = [self] if getnargs(task) > 0 else ()
-                
-                # call task function
-                if (result := task(*args)) and asyncio.iscoroutine(result):
-                    await result
+        elif isinstance(self.default_retry, int):
+            retry = self.default_retry
         
-        except Exception as e:
-            from traceback import format_exc
+        if retry < 0:
+            retry = 0
 
-            if isinstance(e, InsufficientWalltime):
-                root._signal()
-                return
+        for itry in range(retry + 1):
+            try:
+                # import task
+                task = self.task
+                args = self.args
 
-            self._starttime = None
-            self._dispatchtime = None
-            self._err = e
+                if isinstance(task, (list, tuple)):
+                    # import function from custom module
+                    task = parse_import(task)
+                
+                elif isinstance(task, str):
+                    task = partial(self.call_async, task)
+                    args = ()
 
-            print(format_exc(), file=stderr)
+                # print to stdout
+                indent = 0
+                node = self
+                while node.parent is not None:
+                    indent += 2
+                    node = node.parent
 
-            if err or root.job.debug:
-                # job failed twice or job in debug mode
-                root.job.aborted = True
+                msg = ' ' * indent + self.name
+                if itry > 0:
+                    msg += f' (retry {itry})'
+                print(msg)
+
+                if task:
+                    # set default argument
+                    if args is None:
+                        args = [self] if getnargs(task) > 0 else ()
+                    
+                    # call task function
+                    if (result := task(*args)) and asyncio.iscoroutine(result):
+                        await result
+            
+            except Exception as e:
+                from traceback import format_exc
+
+                if isinstance(e, InsufficientWalltime):
+                    root._signal()
+                    return
+
+                print(format_exc(), file=stderr)
+                
+                if itry < retry:
+                    sleep(1)
+                    continue
+
+                self._starttime = None
+                self._dispatchtime = None
+                self._err = e
+
+                if err or root.job.debug:
+                    # job failed twice or job in debug mode
+                    root.job.aborted = True
+                
+                else:
+                    # job failed in its first attempt
+                    root.job.failed = True
             
             else:
-                # job failed in its first attempt
-                root.job.failed = True
-        
-        else:
-            self._endtime = time()
+                self._endtime = time()
+                break
         
         root.checkpoint()
     
@@ -395,13 +418,14 @@ class Node(Directory):
     def add(self, task: Task | None = None, /,
         cwd: str | None = None, name: str | None = None, *,
         args: list | tuple | None = None, concurrent: bool | None = None,
-        prober: tp.Callable[..., float | str | None] | None = None, **data) -> Node:
+        prober: tp.Callable[..., float | str | None] | None = None, retry: int | None = None, **data) -> Node:
         """Add a child node with or without a task.
 
         Args:
             task (Task | None, optional): Task to be executed. Defaults to None.
             cwd (str | None, optional): Working directory of the child node. Defaults to None.
             name (str | None, optional): Name of the child node. If is None, name will be determined by task. Defaults to None.
+            retry (int | None, optional): Number of time the task is retried.
             args (list | tuple | None, optional): Arguments passed to task function. Defaults to None.
             concurrent (bool | None, optional): The child node will execute its child nodes concurrently. Defaults to None.
             prober (tp.Callable[..., float  |  str  |  None] | None, optional): Function that probes the execution status of the node.
@@ -423,6 +447,9 @@ class Node(Directory):
         
         if concurrent is not None:
             data['concurrent'] = concurrent
+        
+        if retry is not None:
+            data['retry'] = retry
         
         if args is not None:
             data['args'] = args
@@ -451,7 +478,7 @@ class Node(Directory):
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
         ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise',
-        priority: int = 0, exec_args: tp.Dict[tp.Type[Job], str] | None = None) -> Node:
+        priority: int = 0, exec_args: tp.Dict[tp.Type[Job], str] | None = None, retry: int | None = None) -> Node:
         """Add a child node that executed an MPI task.
 
         Args:
@@ -503,7 +530,7 @@ class Node(Directory):
         
         func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, fname or name,
             args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout, priority, exec_args)
-        node = self.add(func, cwd, name or fname or getname(cmd), **(data or {}))
+        node = self.add(func, cwd, name or fname or getname(cmd), retry=retry, **(data or {}))
         node._is_mpi = True
         
         return node
