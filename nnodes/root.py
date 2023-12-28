@@ -25,6 +25,9 @@ class Root(Node):
     # default value of node.retry
     default_retry: int = 0
 
+    # delay before retry running a task
+    retry_delay: int | float = 1
+
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: MPI | None = None
 
