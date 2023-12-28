@@ -99,3 +99,22 @@ def test_mpi_check1(stdout):
 def test_mpi_check2(stdout, stderr):
     print(f'stdout2:', stdout.replace('\n', ''))
     print(f'stderr2:', stderr.replace('\n', ''))
+
+
+def test_retry(node):
+
+    node.add(test_retry_sub1, retry=3, retry_delay=1)
+    node.add(test_retry_sub2, retry=3, retry_delay=1)
+    node.add(test_retry_sub3, retry=3, retry_delay=1)
+
+
+def test_retry_sub1(node):
+    node.add('python -c "import sys; sys.exit(1)"')
+
+def test_retry_sub2():
+    print('    > test_retry_sub1')
+    raise Exception('test_retry_sub1')
+
+def test_retry_sub3():
+    print('    > test_retry_sub1')
+    raise Exception('test_retry_sub1')
