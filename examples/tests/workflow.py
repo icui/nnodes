@@ -1,11 +1,12 @@
 import asyncio
-
+import random
 
 def test(node):
     node.add(test_serial0)
     node.add(test_serial)
     node.add(test_concurrent, concurrent=True)
     node.add(test_mpi, cwd='test_mpi', concurrent=True)
+    node.add(test_retry, concurrent=True)
 
 
 def test_serial(node):
@@ -99,3 +100,26 @@ def test_mpi_check1(stdout):
 def test_mpi_check2(stdout, stderr):
     print(f'stdout2:', stdout.replace('\n', ''))
     print(f'stderr2:', stderr.replace('\n', ''))
+
+
+def test_retry(node):
+
+    node.add(test_retry_sub1, retry=5, retry_delay=1, name='test  9 -- retry ')
+    node.add(test_retry_sub2, retry=5, retry_delay=1, name='test 10 -- retry ')
+
+
+def test_retry_sub1(node):
+    cmd = 'import random; assert 0==random.randint(0, 1); print("    > test  9 success")'
+    node.add(f"python -c '{cmd}'", retry=5)
+
+
+async def test_retry_sub2(x):
+
+    # Get random number between 0 and 3
+    idx = random.randint(0, 1)
+
+    # If idx is not 0, raise an exception
+    if idx != 0:
+        raise Exception(f'Error {idx} in {x}')
+
+    print('    > test 10 success')
