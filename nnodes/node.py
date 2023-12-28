@@ -1,7 +1,7 @@
 from __future__ import annotations
 from os import path
 from sys import stderr
-from time import time, sleep
+from time import time
 from datetime import timedelta
 from functools import partial
 from inspect import signature
@@ -350,7 +350,7 @@ class Node(Directory):
                 print(format_exc(), file=stderr)
                 
                 if itry < retry:
-                    sleep(1)
+                    await asyncio.sleep(1)
                     continue
 
                 self._starttime = None
