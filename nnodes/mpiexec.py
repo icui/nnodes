@@ -84,7 +84,7 @@ async def mpiexec(cmd: Task,
                     raise ValueError(
                         f'nprocs must be a multiple of mpi ({nprocs}, {mps})')
 
-                nnodes = max(nnodes, Fraction(nprocs, mps))
+                nnodes = max(nnodes, Fraction(nprocs//mps, root.job.gpus_per_node))
 
             elif gpus_per_proc > 0:
                 nnodes = max(nnodes, Fraction(
