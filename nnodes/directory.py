@@ -269,9 +269,16 @@ class Directory:
             cmd (str): Shell command.
         """
         from asyncio import create_subprocess_shell
+        from asyncio.subprocess import Process
         process = await create_subprocess_shell(cmd, cwd=self.cwd)
         await process.communicate()
-        return process
+
+        # Only use process if it is a subprocess
+        # And check whether returncode is 0
+        if isinstance(process, Process):
+            if process.returncode != 0:
+                raise RuntimeError(
+                    f'{cmd} exited with code {process.returncode}')
 
     def load(self, src: str, ext: DumpType = None) -> tp.Any:
         """Load a pickle / toml / json / npy file.

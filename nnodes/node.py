@@ -342,16 +342,7 @@ class Node(Directory):
 
                     # call task function
                     if (result := task(*args)) and asyncio.iscoroutine(result):
-
-                        # Capture process
-                        process = await result
-
-                        # Only use process if it is a subprocess
-                        # And check whether returncode is 0
-                        if isinstance(process, asyncio.subprocess.Process):
-                            if process.returncode != 0:
-                                raise RuntimeError(
-                                    f'{self.name} exited with code {process.returncode}')
+                        await result
 
             except Exception as e:
                 from traceback import format_exc
