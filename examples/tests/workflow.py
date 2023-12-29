@@ -6,7 +6,7 @@ def test(node):
     node.add(test_serial)
     node.add(test_concurrent, concurrent=True)
     node.add(test_mpi, cwd='test_mpi', concurrent=True)
-    node.add(test_retry, concurrent=True)
+    node.add(test_retry, concurrent=False)
 
 
 def test_serial(node):
@@ -104,13 +104,13 @@ def test_mpi_check2(stdout, stderr):
 
 def test_retry(node):
 
-    node.add(test_retry_sub1, retry=5, retry_delay=1, name='test  9 -- retry ')
-    node.add(test_retry_sub2, retry=5, retry_delay=1, name='test 10 -- retry ')
+    node.add(test_retry_sub1, name='test  9 -- retry ')
+    node.add(test_retry_sub2, retry=10, name='test 10 -- retry ')
 
 
 def test_retry_sub1(node):
-    cmd = 'import random; assert 0==random.randint(0, 1); print("    > test  9 success")'
-    node.add(f"python -c '{cmd}'", retry=5)
+    cmd = 'import random; assert 0==random.randint(0, 1), "This error is wanted!!"; print("    > test  9 success")'
+    node.add(f"python -c '{cmd}'", retry=10, name='run-shell-script')
 
 
 async def test_retry_sub2(x):
@@ -120,6 +120,6 @@ async def test_retry_sub2(x):
 
     # If idx is not 0, raise an exception
     if idx != 0:
-        raise Exception(f'Error {idx} in {x}')
+        raise Exception(f'This error is wanted!! Error {idx} in {x}')
 
     print('    > test 10 success')
