@@ -295,13 +295,17 @@ class Node(Directory):
         root.checkpoint()
 
         retry = 0
+        retry_delay = 1
 
         if isinstance(self.retry, int):
             retry = self.retry
 
         elif isinstance(self.default_retry, int):
             retry = self.default_retry
-
+        
+        if isinstance(self.retry_delay, (int, float)):
+            retry_delay = self.retry_delay
+        
         if retry < 0:
             retry = 0
 
@@ -359,7 +363,7 @@ class Node(Directory):
                 print(format_exc(), file=stderr)
 
                 if itry < retry:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(retry_delay)
                     continue
 
                 self._starttime = None
