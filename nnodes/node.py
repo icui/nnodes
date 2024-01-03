@@ -246,7 +246,7 @@ class Node(Directory):
                             pass
 
                     if name == self.name:
-                        if time() - (root._init.get('_ping') or 0) > 70:
+                        if root.ping_interval and time() - (root._init.get('_ping') or 0) > root.ping_interval + (root.save_interval or 0) + 10:
                             # job exited unexpectedly
                             name += ' (not running)'
 
