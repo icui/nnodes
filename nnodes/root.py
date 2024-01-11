@@ -25,19 +25,19 @@ class Root(Node):
     system: tp.List[str]
 
     # internal interval of calling self.save(), set to None to disable
-    save_interval: int | float | None = None
+    save_interval: int | float | None
 
     # interval of checking if workflow is alive and update root.pickle, set to None to disable
-    ping_interval: int | float | None = 60
+    ping_interval: int | float | None
 
     # default value of node.retry
-    default_retry: int = 0
+    default_retry: int
 
     # delay before retry running a task
-    retry_delay: int | float = 1
+    retry_delay: int | float
 
     # save to root.pickle using a separete thread
-    async_save: bool = True
+    async_save: bool
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: MPI | None = None
@@ -79,6 +79,18 @@ class Root(Node):
             self._init.update(config['root'])
             self._init['_job'] = config['job']
             self._init['_jobstat'] = [False, False, False]
+
+            defaults = {
+                'save_interval': None,
+                'ping_interval': 60,
+                'default_retry': 0,
+                'retry_delay': 1,
+                'async_save': True
+            }
+
+            for key in defaults:
+                if key not in self._init:
+                    self._init[key] = defaults[key]
 
         # create MPI object
         if mpidir:
