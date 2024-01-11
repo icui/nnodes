@@ -403,7 +403,10 @@ class Node(Directory):
 
                 # wait for nodes dynamically added during execution
                 exclude += [item[1] for item in self._executing_async]
-                await asyncio.gather(*(item[0] for item in self._executing_async))
+
+                while len(self._executing_async) > 0:
+                    await asyncio.gather(*(item[0] for item in self._executing_async))
+
                 self._executing_async = None
 
             else:
