@@ -402,11 +402,9 @@ class Node(Directory):
                 await asyncio.gather(*(node.execute() for node in wss))
 
                 # wait for nodes dynamically added during execution
-                exclude += [item[1] for item in self._executing_async]
-
                 while len(self._executing_async) > 0:
                     toexec = self._executing_async
-                    exclude += [item[1] for item in self._executing_async]
+                    exclude += [item[1] for item in toexec]
                     self._executing_async = []
                     await asyncio.gather(*(item[0] for item in toexec))
 
