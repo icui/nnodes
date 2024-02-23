@@ -343,7 +343,7 @@ class Andes(Slurm):
     def mpiexec(self, cmd: str, nprocs: int, cpus_per_proc: int = 1,
                 *args, **kwargs):
         """Get the command to call MPI."""
-        return  f'srun -n {nprocs} -c {cpus_per_proc} --exclusive --cpu-bind=cores {cmd}'
+        return  f'srun -n {nprocs} -c {cpus_per_proc} --exclusive --cpu-bind=cores --mem-per-cpu 200M {cmd}'
 
 
 class Traverse(Slurm):
