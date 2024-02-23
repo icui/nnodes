@@ -3,6 +3,7 @@ import typing as tp
 import signal
 import asyncio
 from time import time
+from threading import Thread
 
 from .node import Node, parse_import
 
@@ -11,7 +12,11 @@ if tp.TYPE_CHECKING:
     from .job import Job
 
 
-_saving = 0
+# the last time root.save() is called
+_last_save = 0
+
+# current background thread performing save operation
+_saving_in_thread: Thread | None = None
 
 
 class Root(Node):
@@ -19,8 +24,20 @@ class Root(Node):
     # import path for job scheduler
     system: tp.List[str]
 
-    # internal interval of calling self.save()
+    # internal interval of calling self.save(), set to None to disable
     save_interval: int | float | None
+
+    # interval of checking if workflow is alive and update root.pickle, set to None to disable
+    ping_interval: int | float | None
+
+    # default value of node.retry
+    default_retry: int
+
+    # delay before retry running a task
+    retry_delay: int | float
+
+    # save to root.pickle using a separete thread
+    async_save: bool
 
     # MPI workspace (only available with __main__ from nnodes.mpi)
     _mpi: MPI | None = None
@@ -30,9 +47,6 @@ class Root(Node):
 
     # module of job scheduler
     _job: Job
-
-    # currently being saved
-    _saving = False
 
     # dict from config.toml
     _config: dict
@@ -65,6 +79,18 @@ class Root(Node):
             self._init.update(config['root'])
             self._init['_job'] = config['job']
             self._init['_jobstat'] = [False, False, False]
+
+            defaults = {
+                'save_interval': None,
+                'ping_interval': 60,
+                'default_retry': 0,
+                'retry_delay': 1,
+                'async_save': True
+            }
+
+            for key in defaults:
+                if key not in self._init:
+                    self._init[key] = defaults[key]
 
         # create MPI object
         if mpidir:
@@ -104,15 +130,15 @@ class Root(Node):
     
     def checkpoint(self):
         """Save with a certain limit on frequency."""
-        global _saving
+        global _last_save
 
-        if self.save_interval and time() - self.save_interval < _saving:
+        if self.save_interval and time() - self.save_interval < _last_save:
             return
         
-        _saving = time()
-        self.save()
+        _last_save = time()
+        self.save(self.async_save)
     
-    def save(self):
+    def save(self, async_save: bool = False):
         """Save state from event loop."""
         if self.job._signaled:
             # job is being requeued
@@ -123,15 +149,47 @@ class Root(Node):
             raise RuntimeError('cannot save root from MPI process')
         
         self._init['_ping'] = time()
+
+        if async_save:
+            asyncio.create_task(self._save_with_thread())
+        
+        else:
+            if _saving_in_thread is not None:
+                _saving_in_thread.join()
+
+            self._dump()
+    
+    async def _save_with_thread(self):
+        """Save in a separete thread."""
+        global _last_save
+        global _saving_in_thread
+
+        if _saving_in_thread:
+            return
+
+        t = _saving_in_thread = Thread(target=self._dump)
+        t.start()
+
+        while t.is_alive():
+            await asyncio.sleep(1)
+            _last_save = time()
+        
+        if _saving_in_thread is t:
+            _saving_in_thread = None
+
+    def _dump(self):
         self.dump(self.__getstate__(), '_root.pickle')
         self.mv('_root.pickle', 'root.pickle')
-    
+
     async def _ping(self):
         """Periodically save to root.pickle."""
-        await asyncio.sleep(60)
+        if not self.ping_interval:
+            return
+
+        await asyncio.sleep(self.ping_interval)
 
         if not self.done:
-            self.save()
+            self.checkpoint()
             asyncio.create_task(self._ping())
 
     def _signal(self, *_):

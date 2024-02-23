@@ -26,9 +26,9 @@ def parse_import(path: tp.List[str] | tp.Tuple[str, ...]) -> tp.Any:
 
         for key in path[1:]:
             target = getattr(target, key)
-        
+
         return target
-    
+
     return path
 
 
@@ -41,13 +41,13 @@ def getname(task: Task) -> str | None:
     """Get default task name."""
     if isinstance(task, (list, tuple)):
         return task[-1]
-    
+
     if isinstance(task, str):
         return task.split(' ')[0].split('/')[-1].split('.')[-1]
 
     while isinstance(task, partial):
         task = task.func
-    
+
     if hasattr(task, '__name__'):
         return task.__name__.lstrip('_')
 
@@ -66,6 +66,9 @@ class Node(Directory):
 
     # whether child nodes are executed concurrently
     concurrent: bool | None
+
+    # number of times the task is retried
+    retry: int | None
 
     # arguments passed to task (pass Node if args is None)
     args: tp.Iterable | None
@@ -128,7 +131,7 @@ class Node(Directory):
             return all(node.done for node in self)
 
         return False
-    
+
     @property
     def elapsed(self) -> float | None:
         """Total walltime."""
@@ -140,14 +143,14 @@ class Node(Directory):
                 return delta + max(*delta_ws)
 
             return delta + sum(delta_ws)
-    
+
     def __init__(self, cwd: str, data: dict, parent: Node | None):
         super().__init__(cwd)
         self._init = data
         self._data = {}
         self._parent = parent
         self._children = []
-    
+
     def __getattr__(self, key: str):
         """Get node data (including parent data)."""
         if key.startswith('_'):
@@ -158,30 +161,30 @@ class Node(Directory):
 
         if key in self._init:
             return self._init[key]
-        
+
         if key not in tp.get_type_hints(Node) and self._parent:
             return self._parent.__getattr__(key)
-        
+
         return None
-    
+
     def __setattr__(self, key: str, val):
         """Set node data."""
         if key.startswith('_'):
             object.__setattr__(self, key, val)
-        
+
         else:
             self._data[key] = val
-    
+
     def __getstate__(self):
         """Items to be saved when pickled."""
         state = {}
-        
+
         for key in tp.get_type_hints(Node):
             if key.startswith('_') and key != '_executing_async':
                 state[key] = getattr(self, key)
-        
+
         return state
-    
+
     def __setstate__(self, state):
         """Restore from saved state."""
         for key, val in state.items():
@@ -194,20 +197,20 @@ class Node(Directory):
     def __len__(self):
         """Child node number."""
         return len(self._children)
-    
+
     def __iter__(self):
         """Iterate child nodes."""
         return iter(self._children)
-    
+
     def __str__(self):
         """Node name with execution state."""
         from .root import root
-        
+
         name = self.name
 
         if self._err:
             name += ' (failed)'
-        
+
         elif self._starttime:
             if self._endtime:
                 if elapsed := self.elapsed:
@@ -216,37 +219,37 @@ class Node(Directory):
 
                     if delta.startswith('0:'):
                         delta = delta[2:]
-                    
+
                     name += f' ({delta})'
 
             else:
                 # task started but not finished
                 if root.job.paused:
                     name += ' (terminated)'
-                
+
                 else:
                     if self._is_mpi and self._dispatchtime is None:
                         # MPI task not yet allocated
                         name += ' (pending)'
-                    
+
                     elif self.prober:
                         try:
                             state = self.prober(self) if getnargs(self.prober) > 0 else self.prober()
 
                             if isinstance(state, float):
                                 name += f' ({int(state*100)}%)'
-                            
+
                             else:
                                 name += f' ({state})'
 
                         except:
                             pass
-                    
+
                     if name == self.name:
-                        if time() - (root._init.get('_ping') or 0) > 70:
+                        if root.ping_interval and time() - (root._init.get('_ping') or 0) > root.ping_interval + (root.save_interval or 0) + 10:
                             # job exited unexpectedly
                             name += ' (not running)'
-                        
+
                         else:
                             # Get current elapsed time
                             celapsed = time() - (self._dispatchtime or self._starttime)
@@ -254,32 +257,32 @@ class Node(Directory):
 
                             # Get attribute string
                             name += f' (running - {dt})'
-        
+
         return name
 
 
     def __repr__(self):
         """State of node and child nodes."""
         return self.stat(False)
-    
+
     def run(self):
         """Wrap self.execute with asyncio."""
         asyncio.run(self.execute())
-    
+
     async def execute(self):
         """Execute task and child tasks."""
         await self._exec_task()
         await self._exec_children()
-    
+
     async def _exec_task(self):
         """Execute self.task."""
         from .root import root
 
         if self._endtime:
             return
-        
+
         self.mkdir()
-        
+
         # save whether previous run failed
         err = self._err
 
@@ -291,63 +294,87 @@ class Node(Directory):
         self._data.clear()
         root.checkpoint()
 
-        try:
-            # import task
-            task = self.task
-            args = self.args
+        retry = 0
+        retry_delay = 1
 
-            if isinstance(task, (list, tuple)):
-                # import function from custom module
-                task = parse_import(task)
-            
-            elif isinstance(task, str):
-                task = partial(self.call_async, task)
-                args = ()
+        if isinstance(self.retry, int):
+            retry = self.retry
 
-            # print to stdout
-            indent = 0
-            node = self
-            while node.parent is not None:
-                indent += 2
-                node = node.parent
-
-            print(' ' * indent + self.name)
-
-            if task:
-                # set default argument
-                if args is None:
-                    args = [self] if getnargs(task) > 0 else ()
-                
-                # call task function
-                if (result := task(*args)) and asyncio.iscoroutine(result):
-                    await result
+        elif isinstance(self.default_retry, int):
+            retry = self.default_retry
         
-        except Exception as e:
-            from traceback import format_exc
+        if isinstance(self.retry_delay, (int, float)):
+            retry_delay = self.retry_delay
+        
+        if retry < 0:
+            retry = 0
 
-            if isinstance(e, InsufficientWalltime):
-                root._signal()
-                return
+        for itry in range(retry + 1):
+            try:
+                # import task
+                task = self.task
+                args = self.args
 
-            self._starttime = None
-            self._dispatchtime = None
-            self._err = e
+                if isinstance(task, (list, tuple)):
+                    # import function from custom module
+                    task = parse_import(task)
 
-            print(format_exc(), file=stderr)
+                elif isinstance(task, str):
+                    task = partial(self.call_async, task)
+                    args = ()
 
-            if err or root.job.debug:
-                # job failed twice or job in debug mode
-                root.job.aborted = True
-            
+                # print to stdout
+                indent = 0
+                node = self
+                while node.parent is not None:
+                    indent += 2
+                    node = node.parent
+
+                msg = ' ' * indent + self.name
+                if itry > 0:
+                    msg += f' (retry {itry})'
+                print(msg)
+
+                if task:
+                    # set default argument
+                    if args is None:
+                        args = [self] if getnargs(task) > 0 else ()
+
+                    # call task function
+                    if (result := task(*args)) and asyncio.iscoroutine(result):
+                        await result
+
+            except Exception as e:
+                from traceback import format_exc
+
+                if isinstance(e, InsufficientWalltime):
+                    root._signal()
+                    return
+
+                print(format_exc(), file=stderr)
+
+                if itry < retry:
+                    await asyncio.sleep(retry_delay)
+                    continue
+
+                self._starttime = None
+                self._dispatchtime = None
+                self._err = e
+
+                if err or root.job.debug:
+                    # job failed twice or job in debug mode
+                    root.job.aborted = True
+
+                else:
+                    # job failed in its first attempt
+                    root.job.failed = True
+
             else:
-                # job failed in its first attempt
-                root.job.failed = True
-        
-        else:
-            self._endtime = time()
-        
+                self._endtime = time()
+                break
+
         root.checkpoint()
-    
+
     async def _exec_children(self):
         """Execute self._children."""
         if not self._endtime:
@@ -375,8 +402,12 @@ class Node(Directory):
                 await asyncio.gather(*(node.execute() for node in wss))
 
                 # wait for nodes dynamically added during execution
-                exclude += [item[1] for item in self._executing_async]
-                await asyncio.gather(*(item[0] for item in self._executing_async))
+                while len(self._executing_async) > 0:
+                    toexec = self._executing_async
+                    exclude += [item[1] for item in toexec]
+                    self._executing_async = []
+                    await asyncio.gather(*(item[0] for item in toexec))
+
                 self._executing_async = None
 
             else:
@@ -387,7 +418,7 @@ class Node(Directory):
             # exit if any error occurs
             if root.job.failed or root.job.aborted:
                 break
-    
+
     def update(self, items: dict):
         """Update properties from dict."""
         self._data.update(items)
@@ -395,13 +426,14 @@ class Node(Directory):
     def add(self, task: Task | None = None, /,
         cwd: str | None = None, name: str | None = None, *,
         args: list | tuple | None = None, concurrent: bool | None = None,
-        prober: tp.Callable[..., float | str | None] | None = None, **data) -> Node:
+        prober: tp.Callable[..., float | str | None] | None = None, retry: int | None = None, **data) -> Node:
         """Add a child node with or without a task.
 
         Args:
             task (Task | None, optional): Task to be executed. Defaults to None.
             cwd (str | None, optional): Working directory of the child node. Defaults to None.
             name (str | None, optional): Name of the child node. If is None, name will be determined by task. Defaults to None.
+            retry (int | None, optional): Number of time the task is retried.
             args (list | tuple | None, optional): Arguments passed to task function. Defaults to None.
             concurrent (bool | None, optional): The child node will execute its child nodes concurrently. Defaults to None.
             prober (tp.Callable[..., float  |  str  |  None] | None, optional): Function that probes the execution status of the node.
@@ -417,13 +449,16 @@ class Node(Directory):
                 assert len(task) == 2
 
             data['task'] = task
-        
+
         if prober is not None:
             data['prober'] = prober
-        
+
         if concurrent is not None:
             data['concurrent'] = concurrent
-        
+
+        if retry is not None:
+            data['retry'] = retry
+
         if args is not None:
             data['args'] = args
 
@@ -431,17 +466,17 @@ class Node(Directory):
 
         if name is not None:
             node._name = name
-        
+
         elif cwd is not None:
             node._name = cwd
-        
+
         self._children.append(node)
 
         if isinstance(self._executing_async, list):
             self._executing_async.append((asyncio.create_task(node.execute()), node))
 
         return node
-    
+
     def add_mpi(self, cmd: Task, /,
         nprocs: int | tp.Callable[[Directory], int] = 1,
         cpus_per_proc: int = 1, gpus_per_proc: int = 0, mps: int | None = None, *,
@@ -451,7 +486,7 @@ class Node(Directory):
         cwd: str | None = None, data: dict | None = None,
         timeout: tp.Literal['auto'] | float | None = 'auto',
         ontimeout: tp.Literal['raise'] | tp.Callable[[], None] | None = 'raise',
-        priority: int = 0, exec_args: tp.Dict[tp.Type[Job], str] | None = None) -> Node:
+        priority: int = 0, exec_args: tp.Dict[tp.Type[Job], str] | None = None, retry: int | None = None) -> Node:
         """Add a child node that executed an MPI task.
 
         Args:
@@ -497,17 +532,17 @@ class Node(Directory):
 
         if use_multiprocessing is None:
             use_multiprocessing = root.job.use_multiprocessing
-        
+
         if mps and gpus_per_proc != 0:
             print('warning: gpus_per_proc is ignored because mps is set')
-        
+
         func = partial(mpiexec, cmd, nprocs, cpus_per_proc, gpus_per_proc, mps, fname or name,
             args, mpiarg, group_mpiarg, check_output, use_multiprocessing, timeout, ontimeout, priority, exec_args)
-        node = self.add(func, cwd, name or fname or getname(cmd), **(data or {}))
+        node = self.add(func, cwd, name or fname or getname(cmd), retry=retry, **(data or {}))
         node._is_mpi = True
-        
+
         return node
-    
+
     def reset(self):
         """Reset node (including child nodes)."""
         self._starttime = None
@@ -516,7 +551,7 @@ class Node(Directory):
         self._err = None
         self._data.clear()
         self._children.clear()
-    
+
     def stat(self, verbose: bool = False):
         """Structure and execution status."""
         stat = str(self)
@@ -529,7 +564,7 @@ class Node(Directory):
                 return '- '
 
             return '0' * (len(str(len(self) - 1)) - len(str(j))) + str(j) + ') '
-            
+
         collapsed = False
 
         for i, node in enumerate(self):
@@ -537,14 +572,14 @@ class Node(Directory):
 
             if not verbose and (node.done or (collapsed and node._starttime is None)):
                 stat += str(node)
-        
+
             else:
                 collapsed = True
-                
+
                 if len(node):
                     stat += '\n  '.join(node.stat(verbose).split('\n'))
-                
+
                 else:
                     stat += str(node)
-        
+
         return stat
